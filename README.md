@@ -1,1 +1,2 @@
-# kurtosis-onboarding-experience-2
+Ethereum On-Boarding Testsuite
+==============================

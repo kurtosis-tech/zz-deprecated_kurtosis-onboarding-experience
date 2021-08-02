@@ -2,8 +2,10 @@ package my_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-testsuite-api-lib/golang/lib/testsuite"
@@ -71,9 +73,56 @@ func (test MyTest) Setup(networkCtx *networks.NetworkContext) (networks.Network,
 }
 
 func (test MyTest) Run(uncastedNetwork networks.Network) error {
+	// Necessary because Go doesn't have generics
+	castedNetwork := uncastedNetwork.(*networks.NetworkContext)
+
+	serviceCtx, err := castedNetwork.GetServiceContext(serviceIDs[0])
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the Ethereum Go Client service context")
+	}
+	logrus.Infof("Got service context for Ethereum Go Client service '%v'", serviceCtx.GetServiceID())
+
+	gethClient, err := getClient(serviceCtx.GetIPAddress())
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get a gethClient from first node.")
+	}
+	defer gethClient.Close()
+
+	networkId, err := gethClient.NetworkID(context.Background())
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to get network ID")
+	}
+	logrus.Infof("Chain ID: %v", networkId)
+
+	exitCode, logOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
+		fmt.Sprintf("printf \"passphrase\\npassphrase\\n\" | geth attach /tmp/geth.ipc --exec 'personal.newAccount()'"),
+	})
+	if err != nil || exitCode != 0 {
+		return stacktrace.NewError("Executing command returned either an error or failing exit code with logs: %+v", string(*logOutput))
+	}
+	logrus.Infof("Logs: %+v", string(*logOutput))
+
+	exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
+		fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(0.05, \"ether\")})'"),
+	})
+	if err != nil || exitCode != 0 {
+		return stacktrace.NewError("Executing command returned either an error or failing exit code with logs: %+v", string(*logOutput))
+	}
+	logrus.Infof("Logs: %+v", string(*logOutput))
+
+	exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
+		fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.getBalance(eth.accounts[1])'"),
+	})
+	if err != nil || exitCode != 0 {
+		return stacktrace.NewError("Executing command returned either an error or failing exit code with logs: %+v", string(*logOutput))
+	}
+	logrus.Infof("Logs: %+v", string(*logOutput))
 	return nil
 }
 
+// ====================================================================================================
+//                                       Private helper functions
+// ====================================================================================================
 func getMyServiceConfigurations() (*services.ContainerCreationConfig, func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error)) {
 	containerCreationConfig := getContainerCreationConfig()
 
@@ -144,4 +193,13 @@ func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{
 	} else {
 		return stacktrace.NewError("Received non-200 status code rom admin RPC api: %v", resp.StatusCode)
 	}
+}
+
+func getClient(ipAddress string) (*ethclient.Client, error) {
+	url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
+	client, err := ethclient.Dial(url)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Ethereum client")
+	}
+	return client, nil
 }

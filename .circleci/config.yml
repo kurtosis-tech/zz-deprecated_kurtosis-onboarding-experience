@@ -17,7 +17,7 @@ jobs:
     executor: ubuntu_vm
     steps:
       - checkout
-      - run: bash .circleci/validate-all-testsuites.sh "${DOCKER_USERNAME}" "${DOCKER_PASSWORD}" "${KURTOSIS_INTERNAL_CLIENT_ID}" "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
+      - run: bash .circleci/validate-testsuite.sh "${DOCKER_USERNAME}" "${DOCKER_PASSWORD}" "${KURTOSIS_INTERNAL_CLIENT_ID}" "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
 
   check_docs:
     docker:

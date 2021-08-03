@@ -25,6 +25,14 @@ cat << EOF > "${config_filepath}"
         {
             "pattern": "^../kurtosis-libs",
             "replacement": "https://docs.kurtosistech.com/kurtosis-libs"
+        },
+        {
+            "pattern": "^../kurtosis-testsuite-api-lib",
+            "replacement": "https://docs.kurtosistech.com/kurtosis-testsuite-api-lib"
+        },
+        {
+            "pattern": "^../kurtosis-client",
+            "replacement": "https://docs.kurtosistech.com/kurtosis-client"
         }
     ]
 }

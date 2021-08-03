@@ -25,11 +25,9 @@ const (
 
 	waitForStartupTimeBetweenPolls = 1 * time.Second
 	waitForStartupMaxPolls         = 90
-)
 
-var serviceIDs = []services.ServiceID{
-	"service-0",
-}
+	serviceID = "my-eth-client"
+)
 
 type MyTest struct{}
 
@@ -46,10 +44,9 @@ func (test MyTest) Configure(builder *testsuite.TestConfigurationBuilder) {
 }
 
 func (test MyTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
-	// ================== BEGIN ETH CODE ================
 	containerCreationConfig, runConfigFunc := getMyServiceConfigurations()
 
-	serviceContext, hostPortBindings, err := networkCtx.AddService(serviceIDs[0], containerCreationConfig, runConfigFunc)
+	serviceContext, hostPortBindings, err := networkCtx.AddService(serviceID, containerCreationConfig, runConfigFunc)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred adding the Ethereum Go Client service")
 	}
@@ -76,7 +73,7 @@ func (test MyTest) Run(uncastedNetwork networks.Network) error {
 	// Necessary because Go doesn't have generics
 	castedNetwork := uncastedNetwork.(*networks.NetworkContext)
 
-	serviceCtx, err := castedNetwork.GetServiceContext(serviceIDs[0])
+	serviceCtx, err := castedNetwork.GetServiceContext(serviceID)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the Ethereum Go Client service context")
 	}
@@ -183,7 +180,7 @@ func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{
 			return stacktrace.Propagate(err, "Error parsing geth node response into bytes.")
 		}
 		bodyString := string(bodyBytes)
-		logrus.Tracef("Response for RPC call %v: %v", rpcJsonString, bodyString)
+		logrus.Debugf("Response for RPC call %v: %v", rpcJsonString, bodyString)
 
 		err = json.NewDecoder(&teeBuf).Decode(targetStruct)
 		if err != nil {
@@ -191,7 +188,7 @@ func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{
 		}
 		return nil
 	} else {
-		return stacktrace.NewError("Received non-200 status code rom admin RPC api: %v", resp.StatusCode)
+		return stacktrace.NewError("Received non-200 status code from admin RPC API: %v", resp.StatusCode)
 	}
 }
 
@@ -199,7 +196,7 @@ func getClient(ipAddress string) (*ethclient.Client, error) {
 	url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
 	client, err := ethclient.Dial(url)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the Ethereum client")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Golang Ethereum client")
 	}
 	return client, nil
 }

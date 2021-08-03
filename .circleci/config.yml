@@ -1,0 +1,60 @@
+version: 2.1
+
+executors:
+  ubuntu_vm:
+    machine:
+      image: ubuntu-1604:202007-01
+      # DO NOT USE THIS YET! This costs 200 credits *per job run* so is extremely expensive for the free plan, but we can turn it on one day if we get more credits
+      # docker_layer_caching: true
+
+# NOTE: Because CircleCI jobs run on separate machines from each other, we duplicate steps (like checkout) between jobs. This is because doing the "correct" DRY
+#  refactoring of, "one job for checkout, one job for build Docker image, etc." would require a) persisting files between jobs and b) persisting Docker images between
+#  jobs. Both are annoying (saving/loading workspaces require re-downloading the workspace over the network, and there doesn't seem to be a good way to do Docker
+#  images), so we run everything inside a single job.
+# See also: https://discuss.circleci.com/t/can-docker-images-be-preserved-between-jobs-in-a-workflow-without-a-manual-load-save/23388/12
+jobs:
+  check_code:
+    executor: ubuntu_vm
+    steps:
+      - checkout
+      - run: bash .circleci/validate-all-testsuites.sh "${DOCKER_USERNAME}" "${DOCKER_PASSWORD}" "${KURTOSIS_INTERNAL_CLIENT_ID}" "${KURTOSIS_INTERNAL_CLIENT_SECRET}"
+
+  check_docs:
+    docker:
+      # Needed for `npm install` down below
+      - image: cimg/node:15.3.0
+    resource_class: small
+    steps:
+      - checkout
+
+      # Gotchas I discovered when writing this:
+      # - Without the '--no-pager' flag, Git will print "WARNING: Terminal is not fully functional" and not display any output
+      # - Circle has no way of getting the PR base branch, so we have to hardcode develop :( See: https://ideas.circleci.com/cloud-feature-requests/p/provide-env-variable-for-branch-name-targeted-by-pull-request
+      # - The --exit-code flag to git-diff returns 0 on no changes, 1 on changes
+      # - We have to use 'origin/develop' rather than 'develop' because Circle does a shallow checkout, and 'develop' gets set to something weird and wrong that makes the check buggy
+      - run: "! git --no-pager diff --exit-code origin/develop...HEAD docs/changelog.md"
+      - run:
+          name: Check links in Markdown docs
+          command: |
+            sudo npm install -g markdown-link-check
+            bash .circleci/check-markdown-links.sh
+
+workflows:
+  build:
+    jobs:
+      # ============ Jobs that run upon PR submission ===============
+      - check_code:
+          context:
+            - docker-user
+            - kurtosis-user
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master
+      - check_docs:
+          filters:
+            branches:
+              ignore:
+                - develop
+                - master

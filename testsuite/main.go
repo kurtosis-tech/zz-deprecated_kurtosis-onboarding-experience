@@ -14,9 +14,8 @@ const (
 )
 
 func main() {
-	// >>>>>>>>>>>>>>>>>>> REPLACE WITH YOUR OWN CONFIGURATOR <<<<<<<<<<<<<<<<<<<<<<<<
+
 	configurator := execution_impl.MyTestsuiteConfigurator{}
-	// >>>>>>>>>>>>>>>>>>> REPLACE WITH YOUR OWN CONFIGURATOR <<<<<<<<<<<<<<<<<<<<<<<<
 
 	suiteExecutor := execution.NewTestSuiteExecutor(configurator)
 	if err := suiteExecutor.Run(); err != nil {

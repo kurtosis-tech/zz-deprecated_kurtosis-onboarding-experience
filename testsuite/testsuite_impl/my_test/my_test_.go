@@ -44,7 +44,7 @@ func (test MyTest) Configure(builder *testsuite.TestConfigurationBuilder) {
 }
 
 func (test MyTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
-	containerCreationConfig, runConfigFunc := getMyServiceConfigurations()
+	containerCreationConfig, runConfigFunc := getEthereumServiceConfigurations()
 
 	serviceContext, hostPortBindings, err := networkCtx.AddService(serviceID, containerCreationConfig, runConfigFunc)
 	if err != nil {
@@ -94,24 +94,33 @@ func (test MyTest) Run(uncastedNetwork networks.Network) error {
 	exitCode, logOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
 		fmt.Sprintf("printf \"passphrase\\npassphrase\\n\" | geth attach /tmp/geth.ipc --exec 'personal.newAccount()'"),
 	})
-	if err != nil || exitCode != 0 {
-		return stacktrace.NewError("Executing command returned either an error or failing exit code with logs: %+v", string(*logOutput))
+	if err != nil {
+		return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
+	}
+	if exitCode != 0 {
+		return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
 	}
 	logrus.Infof("Logs: %+v", string(*logOutput))
 
 	exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
 		fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(0.05, \"ether\")})'"),
 	})
-	if err != nil || exitCode != 0 {
-		return stacktrace.NewError("Executing command returned either an error or failing exit code with logs: %+v", string(*logOutput))
+	if err != nil {
+		return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
+	}
+	if exitCode != 0 {
+		return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
 	}
 	logrus.Infof("Logs: %+v", string(*logOutput))
 
 	exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
 		fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.getBalance(eth.accounts[1])'"),
 	})
-	if err != nil || exitCode != 0 {
-		return stacktrace.NewError("Executing command returned either an error or failing exit code with logs: %+v", string(*logOutput))
+	if err != nil {
+		return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
+	}
+	if exitCode != 0 {
+		return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
 	}
 	logrus.Infof("Logs: %+v", string(*logOutput))
 	return nil
@@ -120,7 +129,7 @@ func (test MyTest) Run(uncastedNetwork networks.Network) error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-func getMyServiceConfigurations() (*services.ContainerCreationConfig, func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error)) {
+func getEthereumServiceConfigurations() (*services.ContainerCreationConfig, func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error)) {
 	containerCreationConfig := getContainerCreationConfig()
 
 	runConfigFunc := getRunConfigFunc()
@@ -171,25 +180,26 @@ func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusOK {
-		// For debugging
-		var teeBuf bytes.Buffer
-		tee := io.TeeReader(resp.Body, &teeBuf)
-		bodyBytes, err := ioutil.ReadAll(tee)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error parsing geth node response into bytes.")
-		}
-		bodyString := string(bodyBytes)
-		logrus.Debugf("Response for RPC call %v: %v", rpcJsonString, bodyString)
-
-		err = json.NewDecoder(&teeBuf).Decode(targetStruct)
-		if err != nil {
-			return stacktrace.Propagate(err, "Error parsing geth node response into target struct.")
-		}
-		return nil
-	} else {
+	if resp.StatusCode != http.StatusOK {
 		return stacktrace.NewError("Received non-200 status code from admin RPC API: %v", resp.StatusCode)
 	}
+
+	// For debugging
+	var teeBuf bytes.Buffer
+	tee := io.TeeReader(resp.Body, &teeBuf)
+	bodyBytes, err := ioutil.ReadAll(tee)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error parsing geth node response into bytes.")
+	}
+	bodyString := string(bodyBytes)
+	logrus.Debugf("Response for RPC call %v: %v", rpcJsonString, bodyString)
+
+	if err = json.NewDecoder(&teeBuf).Decode(targetStruct); err != nil {
+		return stacktrace.Propagate(err, "Error parsing geth node response into target struct.")
+	}
+
+	return nil
+
 }
 
 func getClient(ipAddress string) (*ethclient.Client, error) {

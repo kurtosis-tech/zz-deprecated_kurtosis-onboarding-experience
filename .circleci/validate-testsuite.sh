@@ -1,10 +1,16 @@
-set -euo pipefail
-script_dirpath="$(cd "$(dirname "${0}")" && pwd)"
+#!/usr/bin/env bash
+# ^^^^^^^^^^^^^^^^^ this is the most platform-agnostic way to guarantee this script runs with Bash
+# 2021-07-08 WATERMARK, DO NOT REMOVE - This script was generated from the Kurtosis Bash script template
+
+set -euo pipefail   # Bash "strict mode"
+script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root_dirpath="$(dirname "${script_dirpath}")"
 
-# ==========================================================================================
-#                                         Constants
-# ==========================================================================================
+
+
+# ==================================================================================================
+#                                             Constants
+# ==================================================================================================
 KURTOSIS_DOCKERHUB_ORG="kurtosistech"
 SCRIPTS_DIRNAME="scripts"
 BUILD_AND_RUN_FILENAME="build-and-run.sh"
@@ -12,17 +18,16 @@ TESTSUITE_DIRNAME="testsuite"
 
 ERROR_LOG_KEYWORD="ERRO"
 
-# ==========================================================================================
-#                                        Arg-parsing
-# ==========================================================================================
+
+
+# ==================================================================================================
+#                                       Arg Parsing & Validation
+# ==================================================================================================
 docker_username="${1:-}"
 docker_password_DO_NOT_LOG="${2:-}" # WARNING: DO NOT EVER LOG THIS!!
 kurtosis_client_id="${3:-}"
 kurtosis_client_secret_DO_NOT_LOG="${4:-}" # WARNING: DO NOT EVER LOG THIS!!
 
-# ==========================================================================================
-#                                        Arg validation
-# ==========================================================================================
 if [ -z "${docker_username}" ]; then
   echo "Error: Docker username cannot be empty" >&2
   exit 1
@@ -40,9 +45,11 @@ if [ -z "${kurtosis_client_secret_DO_NOT_LOG}" ]; then
   exit 1
 fi
 
-# ==========================================================================================
-#                                           Main code
-# ==========================================================================================
+
+
+# ==================================================================================================
+#                                             Main Logic
+# ==================================================================================================
 # Docker is restricting anonymous image pulls, so we log in before we do any pulling
 if ! docker login -u "${docker_username}" -p "${docker_password_DO_NOT_LOG}"; then
   echo "Error: Logging in to Docker failed" >&2

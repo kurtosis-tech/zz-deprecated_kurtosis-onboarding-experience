@@ -29,4 +29,7 @@ WORKDIR /run
 # Copy the code into the container
 COPY --from=builder /build/testsuite.bin .
 
+# Copy local static files inside the testsuite image
+COPY testsuite/data /data
+
 CMD ./testsuite.bin

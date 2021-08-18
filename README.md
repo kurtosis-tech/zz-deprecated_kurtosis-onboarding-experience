@@ -32,3 +32,8 @@ Ethereum On-Boarding Testsuite
    4. Implement the second and last part of the Run() method which implements all the commands of the official Geth documentation in the `Dev mode` section
       1. 2. Add the following code lines in [this Gist](https://gist.github.com/leoporoli/5a1539d2e8e45d3658a5b2398d9f3ba7) in the bottom of the Run() method
    5. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that one test ran (my_test) and that the test contained business logic for an Ethereum single node network test, and that it passed.
+
+## Implement an Advanced Test which test and Ethereum Private Network with Multiple Nodes
+
+1. Create an account on https://kurtosistech.com if you don't have one yet.
+2. Verify that the Docker daemon is running on your local machine.

@@ -79,7 +79,7 @@ func (test MyTest) Run(uncastedNetwork networks.Network) error {
 	}
 	logrus.Infof("Got service context for Ethereum Go Client service '%v'", serviceCtx.GetServiceID())
 
-	gethClient, err := getClient(serviceCtx.GetIPAddress())
+	gethClient, err := getEthClient(serviceCtx.GetIPAddress())
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get a gethClient from first node.")
 	}
@@ -202,7 +202,7 @@ func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{
 
 }
 
-func getClient(ipAddress string) (*ethclient.Client, error) {
+func getEthClient(ipAddress string) (*ethclient.Client, error) {
 	url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
 	client, err := ethclient.Dial(url)
 	if err != nil {

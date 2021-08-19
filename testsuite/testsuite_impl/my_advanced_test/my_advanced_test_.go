@@ -351,7 +351,7 @@ func getRunConfigFuncForSimpleNodes(bootnodeEnr string) func(ipAddr string, gene
 		entryPointArgs := []string{
 			"/bin/sh",
 			"-c",
-			fmt.Sprintf("geth init --datadir data %v && geth --datadir data --networkid 15 -http --http.api admin,eth,net,web3,miner,personal,txpool,debug --http.addr %v --http.corsdomain '*' --nat extip:%v --gcmode archive --syncmode full --port %v --bootnodes %v", genesisFilepath, ipAddr, ipAddr, discoveryPort, bootnodeEnr),
+			fmt.Sprintf("geth init --datadir data %v && geth --datadir data --networkid 15 -http --http.api admin,eth,net,web3,miner,personal,txpool,debug --http.addr %v --http.corsdomain '*' --nat extip:%v --port %v --bootnodes %v", genesisFilepath, ipAddr, ipAddr, discoveryPort, bootnodeEnr),
 		}
 
 		result := services.NewContainerRunConfigBuilder().WithEntrypointOverride(entryPointArgs).Build()

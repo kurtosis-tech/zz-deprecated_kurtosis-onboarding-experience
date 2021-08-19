@@ -203,7 +203,7 @@ Y por último validar que la cuenta firmante se encuentra dentro de la red priva
             1. Compruebe que el nodo esta correctamente vinculado al resto. Puede listar la cantidad de peers utilizando el comando `admin_peers` [explicado en esta documentación](https://geth.ethereum.org/docs/rpc/ns-admin#admin_peers)
          1. Repita los pasos anteriores para iniciar y vincular los nodos restantes a la red
 1. Implementar el método Run() del test
-   1. Implemente el deploy del smart contract `hello_world` dentro de la red privada
+   1. Ejecute una transacción para deployar el smart contract `hello_world` dentro de la red privada
       1. Cree una instancia de Geth client que le será necesario para deployar el smart contract
       1. Obtenga el private key de la cuenta firmante
          1. Obtenga el contenido del archivo key de la cuenta firmante mediante el archivo `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` previamente cargado en el testsuite
@@ -235,7 +235,7 @@ Y por último validar que la cuenta firmante se encuentra dentro de la red priva
          ```
          1. Utilice el método auxiliar privado `waitUntilTransactionMined` para controlar si la transacción se realizó exitosamente
       1. Controle el funcionamiento del smart contract `HelloWorld` para esto puede utilizar la función `helloWorld.Greet()`
-      1. Valide que el bootnode contiene la cuenta firmante, puede utilizar el comando `eth.accounts` para obtener la lista de cuentas
+   1. Valide que el bootnode contiene la cuenta firmante, puede utilizar el comando `eth.accounts` para obtener la lista de cuentas
 1. Agregue el test, dentro del archivo `my_testsuite.go`, a la lista de test a ejecutar cuando se lance el testsuite
 1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that two test ran (my_test and my_advanced_test) and both are successfully executed
 

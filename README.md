@@ -35,19 +35,17 @@ Ethereum On-Boarding Testsuite
 
 ## Implement an Advanced Test which test and Ethereum Private Network with Multiple Nodes
 
-The purpose of this test could be separated into two parts
+The purpose of this test can be separated into two parts
 
 The first part of it implements a private Ethereum network with multiple nodes, that uses `Clique consensus` as proof of authority and that is previously set in the genesis block, with a signer account.
 
-To start the private network, it will be necessary to start the bootnode first and then, the remaining nodes using the ENR address from the bootnode. 
+To start the private network, it will be necessary to start the bootnode first and the remaining nodes then using the ENR address from the bootnode. 
 
 To ensure interconnectivity of the private network it should contain a validation to validate the numbers of peers that all the nodes have. 
 
 This part of the test follows the official Geth guide: [how to set up an Ethereum Private Network](https://geth.ethereum.org/docs/interface/private-network)
 
 The second part of the test involves testing a transaction into the private network previously set. It will be executed deploying a simple smart contract, that was previously bonded and placed in `smart_contracts/bindings/hello_world.go`, called `Hello World`
-
-The second part of the test consists of testing executions within the previously set private network. For this, first, the smart contract `Hello World` that is in the folder` smart_contracts / bindings / hello_world.go` must be implemented and validated that it has been successfully implemented.
 
 And finally, validating if the Bootnode contains the signer's account
 
@@ -73,12 +71,12 @@ And finally, validating if the Bootnode contains the signer's account
                      1. Write the command to start the bootnode. It should be written after the init command and using the `&&` operator to execute them sequentially
                         1. Set the `datadir` option
                         1. Set the `keystore` option
-                        1. Set the `network ID` option remember that it is defined in the `genesis.json` file
+                        1. Set the `network ID` option, remember that the value has being defined in the `genesis.json` file
                         1. Enable `HTTP-RPC` server
                         1. Set the `IP address` of the `HTTP-RPC` server
                         1. Set the `API's offered over the HTTP-RPC interface` using these values `admin,eth,net,web3,miner,personal,txpool,debug`
                         1. Accept cross-origin requests from any domain using this value `*`
-                        1. Set the `IP address` of the node
+                        1. Set the `IP address` of the node, you can use the value
                         1. Set the `port` of the node
                         1. Unlock the `signer account` to allow it to mine, remember that you can get this account address from the keystore file `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026`
                         1. Enable `mine`

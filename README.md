@@ -4,7 +4,7 @@ Ethereum On-Boarding Testsuite
 ## Implement a Single Node Ethereum Test Network
 
 1. Create an account on [https://www.kurtosistech.com/sign-up](https://www.kurtosistech.com/sign-up) if you don't have one yet.
-2. Verify that the Docker daemon is running on your local machine using `docker container ls`
+1. Verify that the Docker daemon is running on your local machine using `docker container ls`
 1. Clone this repository by running `git clone https://github.com/kurtosis-tech/kurtosis-onboarding-experience.git --branch master`
 1. Run the empty Ethereum single node test `my_test` to verify that everything works on your local machine.
    1. Run `bash scripts/build-and-run.sh all`
@@ -23,7 +23,7 @@ Ethereum On-Boarding Testsuite
          containerCreationConfig := services.NewContainerCreationConfigBuilder(
             "ethereum/client-go",
          ).WithUsedPorts(
-            map[string]bool{fmt.Sprintf("%v/tcp", 8565): true},
+            map[string]bool{fmt.Sprintf("%v/tcp", 8545): true},
          ).Build()
          return containerCreationConfig
       }
@@ -130,7 +130,7 @@ Ethereum On-Boarding Testsuite
       ```
    1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that one test ran (my_test) and that it passed
 
-###  Write the Run() method on the Ethereum single node test in order to test the initilization of an Ethereum Single Node Network in Dev Mode
+### Write the Run() method on the Ethereum single node test in order to test the initilization of an Ethereum Single Node Network in Dev Mode
    1. Read [the official Geth documentation for starting Ethereum in Dev mode](https://geth.ethereum.org/docs/getting-started/dev-mode) for context as this test implements the commands that are described in this document
    1. Implement the first part of the Run() method to get the chain ID of the private Ethereum network
       1. Add the private helper function `getEthClient` in the bottom of the file, so it can be used later.

@@ -49,12 +49,14 @@ The second part of the test involves testing a transaction into the private netw
 
 The second part of the test consists of testing executions within the previously set private network. For this, first, the smart contract `Hello World` that is in the folder` smart_contracts / bindings / hello_world.go` must be implemented and validated that it has been successfully implemented.
 
-And, finally, validate if the Bootnode contains that the signer account
+And finally, validating if the Bootnode contains the signer's account
 
-1. Implements the Setup() method of the test `my_advanced_test_.go` in order to start the Ethereum private network with multiple nodes
+1. Add `my_advance_test` in the list, that the testsuite will be executed, inside the `my_testsuite.go` file
+
+### Implements the Setup() method of the test `my_advanced_test_.go` in order to start the Ethereum private network with multiple nodes
    1. In your preferred IDE, open the advanced Ethereum test `my_advanced_test` at `testsuite/testsuite_impl/my_advanced_test/my_advanced_test.go`
    1. Start the private network composed by one bootnode and three simple nodes and using the custom genesis block stored at `testsuite/data/genesis.json`
-      1. Start the bootnode and get its ENR address which will be important to start to others nodes
+      1. Start the bootnode and get its ENR address which will be used to start to others nodes
          1. Add the service to the testsuite's network
             1. Create and object of `services.ContainerCreationConfig` you can review the basic test `my_test` to check how was created on it
                1. Load the following statics files:`genesis.json`, `password.txt` and `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` using the IDs previously set in the `Configure` method, with the `WithStaticFiles()` method of the builder
@@ -75,7 +77,7 @@ And, finally, validate if the Bootnode contains that the signer account
                         1. Enable `HTTP-RPC` server
                         1. Set the `IP address` of the `HTTP-RPC` server
                         1. Set the `API's offered over the HTTP-RPC interface` using these values `admin,eth,net,web3,miner,personal,txpool,debug`
-                        1. Accept cross origin requests from any domain using this value `*`
+                        1. Accept cross-origin requests from any domain using this value `*`
                         1. Set the `IP address` of the node
                         1. Set the `port` of the node
                         1. Unlock the `signer account` to allow it to mine, remember that you can get this account address from the keystore file `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026`
@@ -211,9 +213,10 @@ And, finally, validate if the Bootnode contains that the signer account
          1. Connect the node with peers (this must be done from the second loaded node)
             1. Connect the node manually using the command `admin_addPeer` [explained on this document](https://geth.ethereum.org/docs/rpc/ns-admin#admin_addpeer)
             1. Check the link between nodes. You can list the peers using the command `admin_peers` [explained on this document](https://geth.ethereum.org/docs/rpc/ns-admin#admin_peers)
-         1. Repet the previous steps in order to start and link the remaining nodes
-   1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that two tests ran (my_test and my_advanced_test) and that them passed
-1. Implements the Run() method of the test
+         1. Repeat the previous steps in order to start and link the remaining nodes
+   1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that two tests ran (my_test, and my_advanced_test) and that them passed
+
+###  Implements the Run() method of the test
    1. Execute a transaction to deploy the `hello_world` smart contract into the private network
       1. Create an instance of the Geth client which will be necessary to deploy the smart contract
       1. Get the private key's signer account   
@@ -247,8 +250,7 @@ And, finally, validate if the Bootnode contains that the signer account
          1. Use the private helper function `waitUntilTransactionMined` in order to check if the transaction has been successfully completed
       1. Check the operation of the `HelloWorld` smart contract using the function `helloWorld.Greet()`    
    1. Validate if the bootnode has the signer account, you can use the `eth.accounts` command to list the accounts
-1. Add `my_advance_test` in the list, that the testsuite will be execute, inside the `my_testsuite.go` file
-1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that two test ran (my_test and my_advanced_test) and both are successfully executed
+1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that two test ran (my_test, and my_advanced_test) and both are successfully executed
 
 
 

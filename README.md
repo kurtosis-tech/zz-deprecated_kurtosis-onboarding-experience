@@ -51,85 +51,9 @@ And finally, validating if the Bootnode contains the signer's account
                         1. Allow `insecure account unlocking` to allow signer account to mine
                         1. Set and Network IP to restrict network communication using a CIDR mask
                         1. Set the `filepath of the password file` that allows you to avoid entering the password manually when you want to execute a command
-            1. Calls the function `networkCtx.AddService` and passes it and service identifier, and the others two arguments defined in the previous steps
+            1. Calls the `networkCtx.AddService()` method and passes it and service identifier, and the others two arguments defined in the previous steps
          1. Checks if the service is up and running
-            1. Add the following private helper functions `waitForStartup`, `isAvailable`, `getEnodeAddress` and `sendRpcCall` at the end of the file, so they are available for later use
-               ```
-               func waitForStartup(ipAddress string, timeBetweenPolls time.Duration, maxNumRetries int) error {
-                  for i := 0; i < maxNumRetries; i++ {
-                     if isAvailable(ipAddress) {
-                        return nil
-                     }
-
-                  // Don't wait if we're on the last iteration of the loop, since we'd be waiting unnecessarily
-                  if i < maxNumRetries-1 {
-                      time.Sleep(timeBetweenPolls)
-                    }
-                  }
-                  return stacktrace.NewError(
-                     "Service with ip '%v' did not become available despite polling %v times with %v between polls",
-                     ipAddress,
-                     maxNumRetries,
-                     timeBetweenPolls)
-               }
-
-               func isAvailable(ipAddress string) bool {
-                  enodeAddress, err := getEnodeAddress(ipAddress)
-                  if err != nil {
-                     return false
-                  } else {
-                     return strings.HasPrefix(enodeAddress, enodePrefix)
-                  }
-               }
-
-               func getEnodeAddress(ipAddress string) (string, error) {
-                  nodeInfoResponse := new(NodeInfoResponse)
-                  err := sendRpcCall(ipAddress, adminInfoRpcCall, nodeInfoResponse)
-                  if err != nil {
-                     return "", stacktrace.Propagate(err, "Failed to send admin node info RPC request to geth node with ip %v", ipAddress)
-                  }
-                  return nodeInfoResponse.Result.Enode, nil
-               }
-               
-               func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{}) error {
-                  rpcPort := 8545
-                  rpcRequestTimeout := 30 * time.Second
-                  url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
-                  var jsonByteArray = []byte(rpcJsonString)
-               
-                  logrus.Debugf("Sending RPC call to '%v' with JSON body '%v'...", url, rpcJsonString)
-               
-                  client := http.Client{
-                     Timeout: rpcRequestTimeout,
-                  }
-                  resp, err := client.Post(url, "application/json", bytes.NewBuffer(jsonByteArray))
-                  if err != nil {
-                     return stacktrace.Propagate(err, "Failed to send RPC request to geth node with ip '%v'", ipAddress)
-                  }
-                  defer resp.Body.Close()
-               
-                  if resp.StatusCode == http.StatusOK {
-                     // For debugging
-                     var teeBuf bytes.Buffer
-                     tee := io.TeeReader(resp.Body, &teeBuf)
-                     bodyBytes, err := ioutil.ReadAll(tee)
-                     if err != nil {
-                        return stacktrace.Propagate(err, "Error parsing geth node response into bytes.")
-                     }
-                     bodyString := string(bodyBytes)
-                     logrus.Tracef("Response for RPC call %v: %v", rpcJsonString, bodyString)
-               
-                     err = json.NewDecoder(&teeBuf).Decode(targetStruct)
-                     if err != nil {
-                        return stacktrace.Propagate(err, "Error parsing geth node response into target struct.")
-                     }
-                     return nil
-                  } else {
-                     return stacktrace.NewError("Received non-200 status code rom admin RPC api: %v", resp.StatusCode)
-                  }
-               }
-               ```
-            1. Implements the call to the `waitForStartup` method in order to control if the service is running
+            1. Use the `networkCtx.WaitForEndpointAvailability()` method to check availability
          1. Get the bootnode's ENR address            
             1. Execute a geth command inside the service to get the ENR address
             ```
@@ -171,10 +95,9 @@ And finally, validating if the Bootnode contains the signer's account
                         1. Set the `IP address` of the node
                         1. Set the `port` of the node
                         1. Set the `bootnode`using the ENR address previously get
-            1. Calls the function `networkCtx.AddService` and passes it a service identifier, and the others two arguments defined in the previous steps
+            1. Calls the `networkCtx.AddService()` method and passes it a service identifier, and the others two arguments defined in the previous steps
          1. Checks if the node is up and running 
-            1. Implement the call to the `waitForStartup` method again to check if this node is running successfully
-            
+            1. Use the `networkCtx.WaitForEndpointAvailability()` method to check availability
          1. Get the `Enode` address that will be used to connect with the remaining nodes
          1. Connect the node with peers (this must be done from the second loaded node)
             1. Connect the node manually using the command `admin_addPeer` [explained on this document](https://geth.ethereum.org/docs/rpc/ns-admin#admin_addpeer)

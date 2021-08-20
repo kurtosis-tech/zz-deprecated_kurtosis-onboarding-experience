@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/kurtosis-tech/kurtosis-client/golang/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/services"
 	"github.com/kurtosis-tech/kurtosis-onboarding-experience/smart_contracts/bindings"
@@ -49,7 +50,8 @@ const (
 	numGethNodes = 3
 
 	// Availability check constants
-	gethTimeBetweenIsAvailablePolls = 1 * time.Second
+	gethInitialDelaySeconds = 1
+	gethTimeBetweenIsAvailablePolls = 1
 	gethMaxIsAvailablePolls         = 30
 
 	enodePrefix       = "enode://"
@@ -191,7 +193,7 @@ func startEthBootnode(networkCtx *networks.NetworkContext) (string, error) {
 	}
 	logrus.Infof("Got service context for Ethereum Bootnode service '%v' and IP address '%v", serviceCtx.GetServiceID(), serviceCtx.GetIPAddress())
 
-	if err := waitForStartup(serviceCtx.GetIPAddress(), gethTimeBetweenIsAvailablePolls, gethMaxIsAvailablePolls); err != nil {
+	if err := networkCtx.WaitForEndpointAvailability(bootnodeID, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, rpcPort, "", adminInfoRpcCall, gethInitialDelaySeconds, gethMaxIsAvailablePolls, gethTimeBetweenIsAvailablePolls, ""); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred waiting for service with ID '%v' to start", bootnodeID)
 	}
 
@@ -227,7 +229,7 @@ func starEthNodeByBootnode(networkCtx *networks.NetworkContext, serviceID servic
 	}
 	logrus.Infof("Got service context for Ethereum Node '%v' and IP address '%v'", serviceCtx.GetServiceID(), serviceCtx.GetIPAddress())
 
-	if err := waitForStartup(serviceCtx.GetIPAddress(), gethTimeBetweenIsAvailablePolls, gethMaxIsAvailablePolls); err != nil {
+	if err := networkCtx.WaitForEndpointAvailability(serviceID, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, rpcPort, "", adminInfoRpcCall, gethInitialDelaySeconds, gethMaxIsAvailablePolls, gethTimeBetweenIsAvailablePolls, ""); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred waiting for service with ID '%v' to start", serviceID)
 	}
 
@@ -454,33 +456,6 @@ func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{
 		return nil
 	} else {
 		return stacktrace.NewError("Received non-200 status code rom admin RPC api: %v", resp.StatusCode)
-	}
-}
-
-func waitForStartup(ipAddress string, timeBetweenPolls time.Duration, maxNumRetries int) error {
-	for i := 0; i < maxNumRetries; i++ {
-		if isAvailable(ipAddress) {
-			return nil
-		}
-
-		// Don't wait if we're on the last iteration of the loop, since we'd be waiting unnecessarily
-		if i < maxNumRetries-1 {
-			time.Sleep(timeBetweenPolls)
-		}
-	}
-	return stacktrace.NewError(
-		"Service with ip '%v' did not become available despite polling %v times with %v between polls",
-		ipAddress,
-		maxNumRetries,
-		timeBetweenPolls)
-}
-
-func isAvailable(ipAddress string) bool {
-	enodeAddress, err := getEnodeAddress(ipAddress)
-	if err != nil {
-		return false
-	} else {
-		return strings.HasPrefix(enodeAddress, enodePrefix)
 	}
 }
 

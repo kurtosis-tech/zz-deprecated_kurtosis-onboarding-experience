@@ -35,50 +35,57 @@ Ethereum On-Boarding Testsuite
 
 ## Implement an Advanced Test which test and Ethereum Private Network with Multiple Nodes
 
-El objetivo de este test lo podemos dividir en dos partes:
+The purpose of this test could be separated into two parts
 
-La primera parte es testear una implementación de una red privada de Ethereum con multiples nodos, que utilice `Clique consensus` como prueba de autoridad y que este previamente seteado en el genesis block, con una cuenta firmante.
-Para iniciar la red privada primero será necesario iniciar el bootnode y luego iniciar los nodos restantes utilizando el bootnode, al final evaluar la cantidad de peers que contiene cada nodo para validar que los nodos de la red están correctamente interconectados
-Para esta primera parte se puede apoyar en la documentación oficial sobre [como setear una red privada](https://geth.ethereum.org/docs/interface/private-network) provista por los desarrolladores de Geth
+The first part of it implements a private Ethereum network with multiple nodes, that uses `Clique consensus` as proof of authority and that is previously set in the genesis block, with a signer account.
 
-La segunda parte del test consiste en testear ejecuciones dentro de la red privada previamente seteada. Para esto primero se deberá deployar el smart contract `Hello World` que se encuentra en la carpeta `smart_contracts/bindings/hello_world.go` y validar que el mismo ha sido exitosamente deployado.
-Y por último validar que la cuenta firmante se encuentra dentro de la red privada.
+To start the private network, it will be necessary to start the bootnode first and then, the remaining nodes using the ENR address from the bootnode. 
 
-1. Implementar el método Setup() del test `my_advanced_test_.go` para inicializar la red Ethereum privada con múltiples nodos
+To ensure interconnectivity of the private network it should contain a validation to validate the numbers of peers that all the nodes have. 
+
+This part of the test follows the official Geth guide: [how to set up an Ethereum Private Network](https://geth.ethereum.org/docs/interface/private-network)
+
+The second part of the test involves testing a transaction into the private network previously set. It will be executed deploying a simple smart contract, that was previously bonded and placed in `smart_contracts/bindings/hello_world.go`, called `Hello World`
+
+The second part of the test consists of testing executions within the previously set private network. For this, first, the smart contract `Hello World` that is in the folder` smart_contracts / bindings / hello_world.go` must be implemented and validated that it has been successfully implemented.
+
+And, finally, validate if the Bootnode contains that the signer account
+
+1. Implements the Setup() method of the test `my_advanced_test_.go` in order to start the Ethereum private network with multiple nodes
    1. In your preferred IDE, open the advanced Ethereum test `my_advanced_test` at `testsuite/testsuite_impl/my_advanced_test/my_advanced_test.go`
-   1. Inicie la red privada que contenga el genesis block que se encuentra dentro de `testsuite/data/genesis.json`, un bootnode y 3 nodos adicionales
-      1. Iniciar el Bootnode y obtener la dirección ENR necesaria para iniciar los nodos restantes
-         1. Agregue el servicio a la red provista por el testsuite
-            1. Implemente el objeto `services.ContainerCreationConfig` puede guiarse revisando como está configurado para el test `my_test` y sumando los cambios necesarios
-               1. Utilice los archivos estáticos `genesis.json`, `password.txt` y`UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026`, utilizando los identificadores configurados en el método `Configure` del test, con la función `WithStaticFiles` del builder
-               1. Establezca los puertos 8545 para el protocolo `tcp` y el puerto 30303 para el protocolo `tcp` y `udp` utilizando la función `WithUsedPorts()` del builder
-            1. Implemente la función anónima que devuelve el objeto `services.ContainerRunConfig`
-               1. Utilice la función `services.NewContainerRunConfigBuilder()` para crear el objeto `services.ContainerRunConfig` a retornar
-                  1. Obtenga el filepath del archivo `genesis.json` utilizando el mapa `staticFileFilepaths` que recibe la función anónima como argumento
-                  1. Obtenga el filepath del archivo `password.txt` utilizando el mapa `staticFileFilepaths` que recibe la función anónima como argumento
-                  1. Obtenga el filepath del archivo `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` utilizando el mapa `staticFileFilepaths` que recibe la función anónima como argumento
-                  1. Cree el entryPoint a ejecutar en el container con el comando necesario para lanzar un nodo de Ethereum,
-                     1. Escriba el comando para inicializar el genesis block
-                        1. Especifique un valor para el `datadir`
-                        1. Especifique la ubicación del archivo de genesis block usando el filepath previamente obtenido
-                     1. Escriba el comando para inicializar el nodo dentro de la red. El mismo deberá escribirlo a continuación del comando de inicialización y usando el operador '&&' para ejecutar comandos secunciales en un entrypoint
-                        1. Especifique la ubicación del `datadir`
-                        1. Especifique la ubicación del archivo `keystore`
-                        1. Especifique el `network ID` recuerde que este valor ya está definido en el genesis block
-                        1. Habilite el servidor `HTTP-RPC`
-                        1. Especifique la `dirección IP` para el servidor HTTP-RPC
-                        1. Especifique las `API's ofrecidas` sobre la interfaz HTTP-RPC colocandole los siguientes valores `admin,eth,net,web3,miner,personal,txpool,debug`
-                        1. Especifique la `aceptación de todos los dominios` como origen colocando el valor '*'
-                        1. Especifique la `IP` del nodo
-                        1. Especifique el `puerto` que la red privada estará escuchando
-                        1. Desbloquee la `cuenta firmante` para que pueda minar, recuerde que la dirección de esta cuenta la puede encontrar dentro del archivo keystore `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026`
-                        1. Habilite la `minería`
-                        1. Habilite el `desbloqueo de cuenta inseguro` para poder desbloquear la cuenta del firmante
-                        1. Restrinja la comunicación en la red configurando la `IP de la red` (CIDR masks)
-                        1. Especifique el `filepath del archivo de password` que permite evitar la introducción del password manualmente cuando se quiere ejecutar un comando
-            1. Llame a la función `networkCtx.AddService` pasandole un identificador del servicio y los 2 argumentos establecidos en los pasos anteriores
-         1. Controle que el servicio esta correctamente cargado y funcionando
-            1. Agregue las siguientes funciones privadas auxiliares `waitForStartup`, `isAvailable`, `getEnodeAddress` and `sendRpcCall` al final del archivo para que queden disponibles para utilizarlos luego
+   1. Start the private network composed by one bootnode and three simple nodes and using the custom genesis block stored at `testsuite/data/genesis.json`
+      1. Start the bootnode and get its ENR address which will be important to start to others nodes
+         1. Add the service to the testsuite's network
+            1. Create and object of `services.ContainerCreationConfig` you can review the basic test `my_test` to check how was created on it
+               1. Load the following statics files:`genesis.json`, `password.txt` and `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` using the IDs previously set in the `Configure` method, with the `WithStaticFiles()` method of the builder
+               1. Set ports `8545` with `tcp` protocol and port `30303` with `tcp` and `udp` protocol, using the `WithUsedPorts()` method of the builder
+            1. Implements the anonymous function that returns the `services.ContainerRunConfig` object
+               1. Use the `services.NewContainerRunConfigBuilder()` function in order to create the `services.ContainerRunConfig` object to return
+                  1. Get the filepath of `genesis.json` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
+                  1. Get the filepath of `password.txt` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
+                  1. Get the filepath of `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
+                  1. Create the entrypoint that contains the command to execute the Ethereum node into the container
+                     1. Write the command to init the genesis block
+                        1. Set `datadir` value
+                        1. Set the custom genesis block file using the filepath generated on the previous step
+                     1. Write the command to start the bootnode. It should be written after the init command and using the `&&` operator to execute them sequentially
+                        1. Set the `datadir` option
+                        1. Set the `keystore` option
+                        1. Set the `network ID` option remember that it is defined in the `genesis.json` file
+                        1. Enable `HTTP-RPC` server
+                        1. Set the `IP address` of the `HTTP-RPC` server
+                        1. Set the `API's offered over the HTTP-RPC interface` using these values `admin,eth,net,web3,miner,personal,txpool,debug`
+                        1. Accept cross origin requests from any domain using this value `*`
+                        1. Set the `IP address` of the node
+                        1. Set the `port` of the node
+                        1. Unlock the `signer account` to allow it to mine, remember that you can get this account address from the keystore file `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026`
+                        1. Enable `mine`
+                        1. Allow `insecure account unlocking` to allow signer account to mine
+                        1. Set and Network IP to restrict network communication using a CIDR mask
+                        1. Set the `filepath of the password file` that allows you to avoid entering the password manually when you want to execute a command
+            1. Calls the function `networkCtx.AddService` and passes it and service identifier, and the others two arguments defined in the previous steps
+         1. Checks if the service is up and running
+            1. Add the following private helper functions `waitForStartup`, `isAvailable`, `getEnodeAddress` and `sendRpcCall` at the end of the file, so they are available for later use
                ```
                func waitForStartup(ipAddress string, timeBetweenPolls time.Duration, maxNumRetries int) error {
                   for i := 0; i < maxNumRetries; i++ {
@@ -154,9 +161,9 @@ Y por último validar que la cuenta firmante se encuentra dentro de la red priva
                   }
                }
                ```
-            1. Implemente la llamada al método `waitForStartup` para controlar si el servicio previamente agregado está corriendo exitosamente
-         1. Obtenga la dirección ENR del Bootnode 
-            1. Ejecute el comando `geth attach data/geth.ipc --exec admin.nodeInfo.enr` pegue las siguientes líneas de código para realizar este paso
+            1. Implements the call to the `waitForStartup` method in order to control if the service is running
+         1. Get the bootnode's ENR address            
+            1. Execute a geth command inside the service to get the ENR address
             ```
             exitCode, logOutput, err := serviceCtx.ExecCommand([]string{
                "/bin/sh",
@@ -170,49 +177,53 @@ Y por último validar que la cuenta firmante se encuentra dentro de la red priva
                return "", stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
             }
             ```
-            2. Convierta el valor de logout del comando anterior en un string para obtener la dirección ENR del bootnode
-      1. Iniciar el resto de los nodos con la ayuda del bootnode para poder conectar con la red
-         1. Agregue el primer nodo
-            1. Implemente el objeto `services.ContainerCreationConfig` 
-               1. Utilice los archivos estáticos `genesis.json`y `password.txt` utilizando los identificadores configurados en el método `Configure` del test, con la función `WithStaticFiles` del builder
-               1. Establezca los puertos `8545` para el protocolo `tcp` y el puerto `30303` para el protocolo `tcp` y `udp` utilizando la función `WithUsedPorts()` del builder
-            1. Implemente la función anónima que devuelve el objeto `services.ContainerRunConfig`
-               1. Utilice la función `services.NewContainerRunConfigBuilder()` para crear el objeto `services.ContainerRunConfig` a retornar
-                  1. Obtenga el filepath del archivo `genesis.json` utilizando el mapa `staticFileFilepaths` que recibe la función anónima como argumento
-                  1. Obtenga el filepath del archivo `password.txt` utilizando el mapa `staticFileFilepaths` que recibe la función anónima como argumento
-                  1. Cree el entryPoint a ejecutar en el container con el comando necesario para lanzar un nodo de Ethereum,
-                     1. Escriba el comando para inicializar el genesis block 
-                        1. Especifique un valor para el `datadir`
-                        1. Especifique la ubicación del archivo de genesis block usando el filepath previamente obtenido
-                     1. Escriba el comando para inicializar el nodo dentro de la red. El mismo deberá escribirlo a continuación del comando de inicialización y usando el operador `&&` para ejecutar comandos secunciales en un entrypoint
-                        1. Especifique la ubicación del `datadir`
-                        1. Especifique el `network ID` recuerde que este valor ya está definido en el genesis block
-                        1. Habilite el servidor `HTTP-RPC`
-                        1. Especifique la `dirección IP` para el servidor HTTP-RPC
-                        1. Especifique las `API's ofrecidas` sobre la interfaz HTTP-RPC colocandole los siguientes valores `admin,eth,net,web3,miner,personal,txpool,debug`
-                        1. Especifique la `aceptación de todos los dominios` como origen colocando el valor '*'
-                        1. Especifique la `IP` del nodo
-                        1. Especifique el `puerto` que la red privada estará escuchando
-                        1. Establezca el `bootnode` colocando la dirección ENR del bootnode
-            1. Llame a la función `networkCtx.AddService` pasandole un identificador del servicio y los 2 argumentos establecidos en el paso anterior
-         1. Controle que el nodo está correctamente cargado y funcionando
-            1. Implemente nuevamente la llamada al método `waitForStartup` para controlar si el nodo está corriendo exitosamente
-         1. Obtenga la dirección `enode` del nodo ya que el resto de los nodos la necesitarán para poder vincularse a este   
-         1. Conecte el nodo con sus pares
-            1. Conecte el nodo cargado uno por uno con el resto de los nodos (a excepción del bootnode) que están ejecutandose. Puede conectarlos manualmente utilizando el comando `admin_addPeer` [que esta explicado en esta documentación](https://geth.ethereum.org/docs/rpc/ns-admin#admin_addpeer)
-            1. Compruebe que el nodo esta correctamente vinculado al resto. Puede listar la cantidad de peers utilizando el comando `admin_peers` [explicado en esta documentación](https://geth.ethereum.org/docs/rpc/ns-admin#admin_peers)
-         1. Repita los pasos anteriores para iniciar y vincular los nodos restantes a la red
-1. Implementar el método Run() del test
-   1. Ejecute una transacción para deployar el smart contract `hello_world` dentro de la red privada
-      1. Cree una instancia de Geth client que le será necesario para deployar el smart contract
-      1. Obtenga el private key de la cuenta firmante
-         1. Obtenga el contenido del archivo key de la cuenta firmante mediante el archivo `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` previamente cargado en el testsuite
-         1. Obtenga el contenido del password mediante el archivo `password.txt` previamente cargado en el testsuite
-         1. Obtenga el valor del private key mediante la función `keystore.DecryptKey` y pasandole los valores obtenidos del archivo key y password
-      1. Obtenga un transactor que va a ser necesario para poder ejecutar el deploy, recomendamos utilizar la función `NewKeyedTransactorWithChainID`
-      1. Ejecute la transacción para deployar el smart contract utilizando la función `DeployHelloWorld` provista por el binding `hello_world.go` la cual recibirá como parámetros el transactor y el Geth client
-      1. Controle que la transacción ha terminado exitosamente
-         1. Agregue el método auxiliar privado `waitUntilTransactionMined` al final del archivo
+            1. Cast the logout value, receive for the command, to an string which contains the bootnode's ENR address
+            
+      1. Start the remaining nodes with the help of the bootnode
+         1. Add the first node
+            1. Implements the `services.ContainerCreationConfig` object
+               1. Load the following statics files:`genesis.json` and `password.txt` using the IDs previously set in the `Configure` method, with the `WithStaticFiles()` method of the builder
+               1. Set ports `8545` with `tcp` protocol and port `30303` with `tcp` and `udp` protocol, using the `WithUsedPorts()` method of the builder
+
+            1. Implements the anonymous function that returns the `services.ContainerRunConfig` object
+               1. Use the `services.NewContainerRunConfigBuilder()` function in order to create the `services.ContainerRunConfig` object to return
+                  1. Get the filepath of `genesis.json` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
+                  1. Get the filepath of `password.txt` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
+                  1. Create the entrypoint that contains the command to execute the Ethereum node into the container
+                     1. Write the command to init the genesis block
+                        1. Set `datadir` value
+                        1. Set the custom genesis block file using the filepath generated on the previous step
+                     1. Write the command to start the bootnode. It should be written after the init command and using the `&&` operator to execute them sequentially
+                        1. Set the `datadir` option
+                        1. Set the `network ID` option remember that it is defined in the `genesis.json` file
+                        1. Enable `HTTP-RPC` server
+                        1. Set the `IP address` of the `HTTP-RPC` server
+                        1. Set the `API's offered over the HTTP-RPC interface` using these values `admin,eth,net,web3,miner,personal,txpool,debug`
+                        1. Accept cross origin requests from any domain using this value `*`
+                        1. Set the `IP address` of the node
+                        1. Set the `port` of the node
+                        1. Set the `bootnode`using the ENR address previously get
+            1. Calls the function `networkCtx.AddService` and passes it a service identifier, and the others two arguments defined in the previous steps
+         1. Checks if the node is up and running 
+            1. Implement the call to the `waitForStartup` method again to check if this node is running successfully
+            
+         1. Get the `Enode` address that will be used to connect with the remaining nodes
+         1. Connect the node with peers (this must be done from the second loaded node)
+            1. Connect the node manually using the command `admin_addPeer` [explained on this document](https://geth.ethereum.org/docs/rpc/ns-admin#admin_addpeer)
+            1. Check the link between nodes. You can list the peers using the command `admin_peers` [explained on this document](https://geth.ethereum.org/docs/rpc/ns-admin#admin_peers)
+         1. Repet the previous steps in order to start and link the remaining nodes
+   1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that two tests ran (my_test and my_advanced_test) and that them passed
+1. Implements the Run() method of the test
+   1. Execute a transaction to deploy the `hello_world` smart contract into the private network
+      1. Create an instance of the Geth client which will be necessary to deploy the smart contract
+      1. Get the private key's signer account   
+         1. Get the content of signer account's keystore file through the `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` file previously loaded into the testsuite
+         1. Get the password through the `password.txt` file previously loaded into the testsuite
+         1. Get the signer account's private key through the function `keystore.DecryptKey` and passes it the values get from the keystore file and the password file
+      1. Get a transactor which will be necessary to execute the deployment, we suggest using the function `NewKeyedTransactorWithChainID` to accomplish this step
+      1. Execute a transaction to deploy the smart contract using the function `DeployHelloWorld` provided by the binding `hello_world.go` which will receive the transactor and the Geth client as arguments  
+      1. Check if the transaction has been successfully completed
+         1. Add the private helper function `waitUntilTransactionMined` at the end of the file
          ```
          func waitUntilTransactionMined(validatorClient *ethclient.Client, transactionHash common.Hash) error {
             maxNumCheckTransactionMinedRetries := 10
@@ -233,10 +244,10 @@ Y por último validar que la cuenta firmante se encuentra dentro de la red priva
                timeBetweenCheckTransactionMinedRetries)
             }
          ```
-         1. Utilice el método auxiliar privado `waitUntilTransactionMined` para controlar si la transacción se realizó exitosamente
-      1. Controle el funcionamiento del smart contract `HelloWorld` para esto puede utilizar la función `helloWorld.Greet()`
-   1. Valide que el bootnode contiene la cuenta firmante, puede utilizar el comando `eth.accounts` para obtener la lista de cuentas
-1. Agregue el test, dentro del archivo `my_testsuite.go`, a la lista de test a ejecutar cuando se lance el testsuite
+         1. Use the private helper function `waitUntilTransactionMined` in order to check if the transaction has been successfully completed
+      1. Check the operation of the `HelloWorld` smart contract using the function `helloWorld.Greet()`    
+   1. Validate if the bootnode has the signer account, you can use the `eth.accounts` command to list the accounts
+1. Add `my_advance_test` in the list, that the testsuite will be execute, inside the `my_testsuite.go` file
 1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that two test ran (my_test and my_advanced_test) and both are successfully executed
 
 

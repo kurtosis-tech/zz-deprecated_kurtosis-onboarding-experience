@@ -58,7 +58,8 @@ func (test MyAdvancedTest) Setup(networkCtx *networks.NetworkContext) (networks.
 
 func (test MyAdvancedTest) Run(uncastedNetwork networks.Network) error {
 
-	//TODO Get the bootnode service from the network
+	// Necessary because Go doesn't have generics
+	castedNetwork := uncastedNetwork.(*networks.NetworkContext)
 
 	//TODO Instantiate the Geth Client
 

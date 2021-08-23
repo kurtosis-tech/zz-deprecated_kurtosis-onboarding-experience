@@ -35,7 +35,7 @@ And finally, validating if the Bootnode contains the signer's account
                   1. Create the entrypoint that contains the command to execute the Ethereum node into the container
                      1. Write the command to init the genesis block
                         1. Set `datadir` value
-                        1. Set the custom genesis block file using the filepath generated on the previous step
+                        1. Set the custom genesis block file location using the `folder` of the `filepath` generated on the previous step
                      1. Write the command to start the bootnode. It should be written after the init command and using the `&&` operator to execute them sequentially
                         1. Set the `datadir` option
                         1. Set the `keystore` option
@@ -44,14 +44,26 @@ And finally, validating if the Bootnode contains the signer's account
                         1. Set the `IP address` of the `HTTP-RPC` server
                         1. Set the `API's offered over the HTTP-RPC interface` using these values `admin,eth,net,web3,miner,personal,txpool,debug`
                         1. Accept cross-origin requests from any domain using this value `*`
-                        1. Set the `IP address` of the node, you can use the value
+                        1. Set the `IP address` of the node
                         1. Set the `port` of the node
                         1. Unlock the `signer account` to allow it to mine, remember that you can get this account address from the keystore file `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026`
                         1. Enable `mine`
                         1. Allow `insecure account unlocking` to allow signer account to mine
                         1. Set and Network IP to restrict network communication using a CIDR mask
+                           1. Add the private helper function `getIPNet()` 
+                           ```
+                           func getIPNet(ipAddr string) *net.IPNet {
+                               cidr := ipAddr + subnetRange
+                               _, ipNet, _ := net.ParseCIDR(cidr)
+                               return ipNet
+                           }
+                           ```
+                           1. Call the private helper `getIPNet()` and passes it the bootnode's IP address
                         1. Set the `filepath of the password file` that allows you to avoid entering the password manually when you want to execute a command
             1. Calls the `networkCtx.AddService()` method and passes it and service identifier, and the others two arguments defined in the previous steps
+            1. Verify if everything is working well on this test at this point
+               1. Run `scripts/build-and-run.sh all --tests myAdvancedTest`
+               1. Verify that the output of the build-and-run.sh script indicates that one test ran (myAdvancedTest) and that it passed.
          1. Checks if the service is up and running
             1. Use the `networkCtx.WaitForEndpointAvailability()` method to check availability
          1. Get the bootnode's ENR address            
@@ -63,24 +75,21 @@ And finally, validating if the Bootnode contains the signer's account
                fmt.Sprintf("geth attach data/geth.ipc --exec admin.nodeInfo.enr"),
             })
             if err != nil {
-               return "", stacktrace.Propagate(err, "Executing command returned an error with logs: %+v", string(*logOutput))
+               return "", stacktrace.Propagate(err, "Executing command returned an error: %v", err.Error())
             }
-            if exitCode != execCommandSuccessExitCode {
+            if exitCode != 0 {
                return "", stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
             }
             ```
             1. Cast the logout value, receive for the command, to an string which contains the bootnode's ENR address
-            
       1. Start the remaining nodes with the help of the bootnode
          1. Add the first node
             1. Implements the `services.ContainerCreationConfig` object
-               1. Load the following statics files:`genesis.json` and `password.txt` using the IDs previously set in the `Configure` method, with the `WithStaticFiles()` method of the builder
+               1. Load file `genesis.json` using the ID previously set in the `Configure` method, with the `WithStaticFiles()` method of the builder
                1. Set ports `8545` with `tcp` protocol and port `30303` with `tcp` and `udp` protocol, using the `WithUsedPorts()` method of the builder
-
             1. Implements the anonymous function that returns the `services.ContainerRunConfig` object
                1. Use the `services.NewContainerRunConfigBuilder()` function in order to create the `services.ContainerRunConfig` object to return
                   1. Get the filepath of `genesis.json` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
-                  1. Get the filepath of `password.txt` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
                   1. Create the entrypoint that contains the command to execute the Ethereum node into the container
                      1. Write the command to init the genesis block
                         1. Set `datadir` value
@@ -91,11 +100,14 @@ And finally, validating if the Bootnode contains the signer's account
                         1. Enable `HTTP-RPC` server
                         1. Set the `IP address` of the `HTTP-RPC` server
                         1. Set the `API's offered over the HTTP-RPC interface` using these values `admin,eth,net,web3,miner,personal,txpool,debug`
-                        1. Accept cross origin requests from any domain using this value `*`
+                        1. Accept cross-origin requests from any domain using this value `*`
                         1. Set the `IP address` of the node
                         1. Set the `port` of the node
                         1. Set the `bootnode`using the ENR address previously get
             1. Calls the `networkCtx.AddService()` method and passes it a service identifier, and the others two arguments defined in the previous steps
+            1. Verify again if everything is working well on this test at this point
+               1. Run `scripts/build-and-run.sh all --tests myAdvancedTest`
+               1. Verify that the output of the build-and-run.sh script indicates that one test ran (myAdvancedTest) and that it passed.
          1. Checks if the node is up and running 
             1. Use the `networkCtx.WaitForEndpointAvailability()` method to check availability
          1. Get the `Enode` address that will be used to connect with the remaining nodes, you can use the following private helper functions to achieve this
@@ -110,6 +122,7 @@ And finally, validating if the Bootnode contains the signer's account
             }
             
             func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{}) error {
+                rpcPort := 8545
                 url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
                 var jsonByteArray = []byte(rpcJsonString)
             
@@ -154,11 +167,13 @@ And finally, validating if the Bootnode contains the signer's account
 ###  Implements the Run() method of the test
    1. Execute a transaction to deploy the `hello_world` smart contract into the private network
       1. Create an instance of the Geth client which will be necessary to deploy the smart contract
-      1. Get the private key's signer account   
-         1. Get the content of signer account's keystore file through the `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` file previously loaded into the testsuite
-         1. Get the password through the `password.txt` file previously loaded into the testsuite
-         1. Get the signer account's private key through the function `keystore.DecryptKey` and passes it the values get from the keystore file and the password file
-      1. Get a transactor which will be necessary to execute the deployment, we suggest using the function `NewKeyedTransactorWithChainID` to accomplish this step
+      1. Get the private key's signer account
+         1. Get the content of signer account's keystore file through the `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` file and the content of the password through the `password.txt` file previously loaded into the testsuite
+            1. Get the file paths using `serviceCtx.LoadStaticFiles()` method
+            1. Get files' content using Golang `ioutil` package
+         1. Get the signer account's private key through the function `keystore.DecryptKey` and passes it the values get from the keystore file, and the password file
+      1. Get a transactor which will be necessary to execute the deployment, we suggest using the function `bind.NewKeyedTransactorWithChainID` to accomplish this step
+      1. Set a transactor's gas price
       1. Execute a transaction to deploy the smart contract using the function `DeployHelloWorld` provided by the binding `hello_world.go` which will receive the transactor and the Geth client as arguments  
       1. Check if the transaction has been successfully completed
          1. Add the private helper function `waitUntilTransactionMined` at the end of the file

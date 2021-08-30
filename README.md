@@ -52,11 +52,6 @@ Ethereum On-Boarding Testsuite
             if err != nil {
                 return nil, stacktrace.Propagate(err, "An error occurred adding the Ethereum Go Client service")
             }
-        
-            serviceContext, hostPortBindings, err := networkCtx.AddService("my-eth-client", containerCreationConfig, runConfigFunc)
-            if err != nil {
-             return nil, stacktrace.Propagate(err, "An error occurred adding the Ethereum Go Client service")
-            }
             ```
     1. Add an availability check to the `Setup()` method to make sure your Ethereum node is fully functional before your test starts.
         1. Add a helper function `sendRpcCall` to send RPC calls to the Ethereum node to the bottom of the test file.

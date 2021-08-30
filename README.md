@@ -1,7 +1,7 @@
 Ethereum On-Boarding Testsuite
 ==============================
 
-## Implement a Single Node Ethereum Test Network
+## Implement a basic test which tests transactions on a single node Ethereum testnet
 
 1. Create an account on [https://www.kurtosistech.com/sign-up](https://www.kurtosistech.com/sign-up) if you don't have one yet.
 1. Verify that the Docker daemon is running on your local machine using `docker container ls`
@@ -199,11 +199,11 @@ Ethereum On-Boarding Testsuite
     ```
     1. Verify that running `bash scripts/build-and-run.sh all` shows one passing test (my_test) that contains the business logic for an Ethereum single node network
 
-## Implement an Advanced Test which test and Ethereum Private Network with Multiple Nodes
+## Implement an advanced test which tests execution of a smart contract on a multiple-node Ethereum network
 
-1. Create a private Ethereum test network in Kurtosis with multiple nodes, that uses `Clique consensus` as proof of authority and that is previously set in the genesis block, with a signer account.
-    1. Add `my_advance_test` in the test list, that the testsuite will be executed, inside the `my_testsuite.go` file
-    1. Setup a bootnode first
+1. Create a multiple-node private Ethereum testnet in Kurtosis.
+    1. Add the advanced test object in `my_advanced_test_.go` to the testsuite object in `my_testsuite.go`.
+    1. Setup an Ethereum bootnode for the advanced test.
         1. Implements the Setup() method of the test `my_advanced_test_.go` in order to start the Ethereum private network with multiple nodes
             1. In your preferred IDE, open the advanced Ethereum test `my_advanced_test` at `testsuite/testsuite_impl/my_advanced_test/my_advanced_test.go`
             1. Add the service to the testsuite's network
@@ -374,7 +374,7 @@ Ethereum On-Boarding Testsuite
     1. Repeat the previous steps in order to start and link the remaining nodes
     1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that two tests ran (myTest, and myAdvancedTest) and that them passed
     
-1. Deploy the the `hello_world` smart contract into the private network to test an Ethereum transaction
+1. Deploy the `hello_world` smart contract into the private network to test an Ethereum transaction
     1. Write test logic in the `Run()` method to verify advanced functionality of the private multiple node Ethereum network.
         1. Create an instance of the Geth client which will be necessary to deploy the smart contract
         1. Get the private key's signer account
@@ -410,7 +410,4 @@ Ethereum On-Boarding Testsuite
              ```
             1. Use the private helper function `waitUntilTransactionMined` in order to check if the transaction has been successfully completed
         1. Check the operation of the `HelloWorld` smart contract using the function `helloWorld.Greet()`    
-1. Validate if the bootnode has the signer account
-    1. Execute the `eth.accounts` command to list the accounts
-    1. Check if one of the listed accounts is the signer's account
 1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that two test ran (myTest, and myAdvancedTest) and both are successfully executed

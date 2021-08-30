@@ -128,78 +128,78 @@ Ethereum On-Boarding Testsuite
                logrus.Infof("Added Ethereum Go Client service with host port bindings: %+v", hostPortBindings)
                ```
         1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that one test ran (my_test) and that it passed
-1. Write the Run() method on the Ethereum single node test in order to test the initilization of an Ethereum Single Node Network in Dev Mode
-1. Implement the first part of the Run() method to get the chain ID of the private Ethereum network
-  1. Add the private helper function `getEthClient` in the bottom of the file, so it can be used later.
-  ```
-  func getEthClient(ipAddress string) (*ethclient.Client, error) {
-      rpcPort := 8545
-      url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
-      client, err := ethclient.Dial(url)
-      if err != nil {
-          return nil, stacktrace.Propagate(err, "An error occurred getting the Golang Ethereum client")
-      }
-      return client, nil
-  }
-  ```
-  1. Add the following code lines in the top of the Run() method
-  ```
-  // Necessary because Go doesn't have generics
-  castedNetwork := uncastedNetwork.(*networks.NetworkContext)
-     
-  serviceCtx, err := castedNetwork.GetServiceContext("my-eth-client")
-  if err != nil {
-     return stacktrace.Propagate(err, "An error occurred getting the Ethereum Go Client service context")
-  }
-  logrus.Infof("Got service context for Ethereum Go Client service '%v'", serviceCtx.GetServiceID())
-     
-  gethClient, err := getEthClient(serviceCtx.GetIPAddress())
-  if err != nil {
-     return stacktrace.Propagate(err, "Failed to get a gethClient from first node.")
-  }
-  defer gethClient.Close()
-     
-  networkId, err := gethClient.NetworkID(context.Background())
-  if err != nil {
-     return stacktrace.Propagate(err, "Failed to get network ID")
-  }
-  logrus.Infof("Chain ID: %v", networkId)
-  ```   
-  1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that one test ran (my_test) and that it passed
-1. Implement the second and last part of the Run() method which implements all the commands of the official Geth documentation in the `Dev mode` section
-  1. Add the following code lines in the bottom of the Run() method
-  ```
-  exitCode, logOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
-    fmt.Sprintf("printf \"passphrase\\npassphrase\\n\" | geth attach /tmp/geth.ipc --exec 'personal.newAccount()'"),
-  })
-  if err != nil {
-     return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
-  }
-  if exitCode != 0 {
-     return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
-  }
-  logrus.Infof("Logs: %+v", string(*logOutput))
-
-  exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
-     fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(0.05, \"ether\")})'"),
-  })
-  if err != nil {
-     return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
-  }
-  if exitCode != 0 {
-     return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
-  }
-  logrus.Infof("Logs: %+v", string(*logOutput))
-
-  exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
-     fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.getBalance(eth.accounts[1])'"),
-  })
-  if err != nil {
-     return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
-  }
-  if exitCode != 0 {
-     return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
-  }
-  logrus.Infof("Logs: %+v", string(*logOutput))
-  ```
-1. Verify that running `bash scripts/build-and-run.sh all` shows one passing test (my_test) that contains the business logic for an Ethereum single node network
+1. Write test logic in the `Run()` method to verify basic functionality of the single node Ethereum network.
+    1. Write test logic to get and verify the Chain ID of the test chain
+        1. Create an Eth Client private helper function `getEthClient` at the bottom of the test file, so it can be used later.
+        ```
+        func getEthClient(ipAddress string) (*ethclient.Client, error) {
+            rpcPort := 8545
+            url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
+            client, err := ethclient.Dial(url)
+            if err != nil {
+                return nil, stacktrace.Propagate(err, "An error occurred getting the Golang Ethereum client")
+            }
+            return client, nil
+        }
+        ```
+        1. Create an Eth Client using the Kurtosis network context in the `Run()` method
+        ```
+        // Necessary because Go doesn't have generics
+        castedNetwork := uncastedNetwork.(*networks.NetworkContext)
+           
+        serviceCtx, err := castedNetwork.GetServiceContext("my-eth-client")
+        if err != nil {
+           return stacktrace.Propagate(err, "An error occurred getting the Ethereum Go Client service context")
+        }
+        logrus.Infof("Got service context for Ethereum Go Client service '%v'", serviceCtx.GetServiceID())
+           
+        gethClient, err := getEthClient(serviceCtx.GetIPAddress())
+        if err != nil {
+           return stacktrace.Propagate(err, "Failed to get a gethClient from first node.")
+        }
+        defer gethClient.Close()
+        ```
+        1. Use the Eth Client to get and print the Network ID.
+        ```
+        networkId, err := gethClient.NetworkID(context.Background())
+        if err != nil {
+           return stacktrace.Propagate(err, "Failed to get network ID")
+        }
+        logrus.Infof("Chain ID: %v", networkId)
+        ```   
+        1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that one test ran (my_test) and that it passed
+1. Send a transaction on the blockchain running in your single-node Ethereum testnet.
+    1. Use the `ExecCommand()` on the Kurtosis service context to execute commands from the [official Geth documentation](https://geth.ethereum.org/docs/getting-started/dev-mode).
+    ```
+    exitCode, logOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
+      fmt.Sprintf("printf \"passphrase\\npassphrase\\n\" | geth attach /tmp/geth.ipc --exec 'personal.newAccount()'"),
+    })
+    if err != nil {
+       return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
+    }
+    if exitCode != 0 {
+       return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
+    }
+    logrus.Infof("Logs: %+v", string(*logOutput))   
+    exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
+       fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(0.05, \"ether\")})'"),
+    })
+    if err != nil {
+       return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
+    }
+    if exitCode != 0 {
+       return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
+    }
+    logrus.Infof("Logs: %+v", string(*logOutput))   
+    exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
+       fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.getBalance(eth.accounts[1])'"),
+    })
+    if err != nil {
+       return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
+    }
+    if exitCode != 0 {
+       return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
+    }
+    logrus.Infof("Logs: %+v", string(*logOutput))
+    ```
+    1. Verify that running `bash scripts/build-and-run.sh all` shows one passing test (my_test) that contains the business logic for an Ethereum single node network

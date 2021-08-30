@@ -59,7 +59,7 @@ func (test MyAdvancedTest) Setup(networkCtx *networks.NetworkContext) (networks.
 func (test MyAdvancedTest) Run(uncastedNetwork networks.Network) error {
 
 	// Necessary because Go doesn't have generics
-	castedNetwork := uncastedNetwork.(*networks.NetworkContext)
+	//castedNetwork := uncastedNetwork.(*networks.NetworkContext)//uncomment this line
 
 	//TODO Instantiate the Geth Client
 

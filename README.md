@@ -199,80 +199,78 @@ Ethereum On-Boarding Testsuite
     ```
     1. Verify that running `bash scripts/build-and-run.sh all` shows one passing test (my_test) that contains the business logic for an Ethereum single node network
 
-## Implement an advanced test which tests execution of a smart contract on a multiple-node Ethereum network
+## Implement an advanced test which tests a smart contract on a multiple-node Ethereum network
 
 1. Create a multiple-node private Ethereum testnet in Kurtosis.
-    1. Add the advanced test object in `my_advanced_test_.go` to the testsuite object in `my_testsuite.go`.
-    1. Setup an Ethereum bootnode for the advanced test.
-        1. Implements the Setup() method of the test `my_advanced_test_.go` in order to start the Ethereum private network with multiple nodes
-            1. In your preferred IDE, open the advanced Ethereum test `my_advanced_test` at `testsuite/testsuite_impl/my_advanced_test/my_advanced_test.go`
-            1. Add the service to the testsuite's network
-                1. Set the container configuration for the Ethereum container in your testnet.
-                    1. Set the container configuration's static files for an Ethereum bootnode
-                        1. Set following statics files:`genesis.json`, `password.txt` and `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` using the IDs previously set in the `Configure` method, with the `WithStaticFiles()` method of the builder
-                            1. Add the following code to set a variable that you can use in `WithStaticFiles()` method
-                            ```
-                            staticFiles := map[services.StaticFileID]bool{
-                                genesisStaticFileID: true,
-                                passwordStaticFileID: true,
-                                signerKeystoreFileID: true
-                            }
-                            ```
-                    1. Set the container configuration`s used ports for an Ethereum bootnode
-                        1. Set ports `8545` with `tcp` protocol and port `30303` with `tcp` and `udp` protocol, using the `WithUsedPorts()` method of the builder
-                            1. Add the following code to set a variable that you can use in `WithUsedPorts()` method
-                            ```
-                            usedPorts := map[string]bool{
-                                   fmt.Sprintf("%v/tcp", 8545): true,
-                                   fmt.Sprintf("%v/tcp", 30303): true,
-                                   fmt.Sprintf("%v/udp", 30303): true,
-                            },
-                            ```
-                1. Set the runtime configuration for the Ethereum container in your testnet.
-                    1. Get the filepath of `genesis.json` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
-                        1. Add the following code into the anonymous function that defines the runtime configuration, to set a variable with the genesis's file location
-                        ```
-                        genesisFilepath, found := staticFileFilepaths[genesisStaticFileID]
-                        if !found {
-                            return nil, stacktrace.NewError("No filepath found for key '%v'; this is a bug in Kurtosis!", genesisStaticFileID)
-                        }
-                        ```
-                    1. Get the filepath of `password.txt` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
-                    1. Get the filepath of `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
-                    1. Create the entrypoint that contains the command to execute the Ethereum node into the container
-                        1. Write the command to init the genesis block
-                        1. Set `datadir` value
-                        1. Set the custom genesis block file location using the `folder` of the `filepath` generated on the previous step
-                    1. Write the command to start the bootnode. It should be written after the init command and using the `&&` operator to execute them sequentially
-                        1. Set the `datadir` option
-                        1. Set the `keystore` option
-                        1. Set the `network ID` option, remember that the value has being defined in the `genesis.json` file
-                        1. Enable `HTTP-RPC` server
-                        1. Set the `IP address` of the `HTTP-RPC` server
-                        1. Set the `API's offered over the HTTP-RPC interface` using these values `admin,eth,net,web3,miner,personal,txpool,debug`
-                        1. Accept cross-origin requests from any domain using this value `*`
-                        1. Set the `IP address` of the node
-                        1. Set the `port` of the node
-                        1. Unlock the `signer account` to allow it to mine, remember that you can get this account address from the keystore file `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026`
-                        1. Enable `mine`
-                        1. Allow `insecure account unlocking` to allow signer account to mine
-                        1. Set and Network IP to restrict network communication using a CIDR mask
-                            1. Add the private helper function `getIPNet()` 
-                               ```
-                               func getIPNet(ipAddr string) *net.IPNet {
-                                   cidr := ipAddr + subnetRange
-                                   _, ipNet, _ := net.ParseCIDR(cidr)
-                                   return ipNet
-                               }
-                               ```
-                            1. Call the private helper `getIPNet()` and passes it the bootnode's IP address
-                        1. Set the `filepath of the password file` that allows you to avoid entering the password manually when you want to execute a command
-                1. Calls the `networkCtx.AddService()` method and passes it the service identifier, the container configuration and the runtime configuration
-            1. Verify if everything is working well on this test at this point
-                1. Run `scripts/build-and-run.sh all --tests myAdvancedTest`
-                1. Verify that the output of the build-and-run.sh script indicates that one test ran (myAdvancedTest) and that it passed.
-            1. Checks if the bootnode service is up and running
-                1. Use the `networkCtx.WaitForEndpointAvailability()` method to check availability
+    1. Add an advanced test object in `my_advanced_test_.go` to the Test map in `GetTests()` in `my_testsuite.go`.
+    1. Start an Ethereum bootnode in the advanced test's testnet.
+        1. In your preferred IDE, open the advanced Ethereum test `my_advanced_test` at `testsuite/testsuite_impl/my_advanced_test/my_advanced_test.go`
+        1. Set the container configuration for the bootnode Ethereum container in your testnet.
+            1. Set the container configuration's static files for an Ethereum bootnode
+                1. Set following statics files: `genesis.json`, `password.txt` and `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` using the IDs previously set in the `Configure` method, with the `WithStaticFiles()` method of the builder
+                    1. Add the following code to set a variable that you can use in `WithStaticFiles()` method
+                    ```
+                    staticFiles := map[services.StaticFileID]bool{
+                        genesisStaticFileID: true,
+                        passwordStaticFileID: true,
+                        signerKeystoreFileID: true
+                    }
+                    ```
+            1. Set the container configuration`s used ports for an Ethereum bootnode
+                1. Set ports `8545` with `tcp` protocol and port `30303` with `tcp` and `udp` protocol, using the `WithUsedPorts()` method of the builder
+                    1. Add the following code to set a variable that you can use in `WithUsedPorts()` method
+                    ```
+                    usedPorts := map[string]bool{
+                           fmt.Sprintf("%v/tcp", 8545): true,
+                           fmt.Sprintf("%v/tcp", 30303): true,
+                           fmt.Sprintf("%v/udp", 30303): true,
+                    },
+                    ```
+        1. Set the runtime configuration for the Ethereum container in your testnet.
+            1. Get the filepath of `genesis.json` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
+                1. Add the following code into the anonymous function that defines the runtime configuration, to set a variable with the genesis's file location
+                ```
+                genesisFilepath, found := staticFileFilepaths[genesisStaticFileID]
+                if !found {
+                    return nil, stacktrace.NewError("No filepath found for key '%v'; this is a bug in Kurtosis!", genesisStaticFileID)
+                }
+                ```
+            1. Get the filepath of `password.txt` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
+            1. Get the filepath of `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026` file using the `staticFileFilepaths` map that the anonymous function receives as a parameter
+            1. Create the entrypoint that contains the command to execute the Ethereum node into the container
+                1. Write the command to init the genesis block
+                1. Set `datadir` value
+                1. Set the custom genesis block file location using the `folder` of the `filepath` generated on the previous step
+            1. Write the command to start the bootnode. It should be written after the init command and using the `&&` operator to execute them sequentially
+                1. Set the `datadir` option
+                1. Set the `keystore` option
+                1. Set the `network ID` option, remember that the value has being defined in the `genesis.json` file
+                1. Enable `HTTP-RPC` server
+                1. Set the `IP address` of the `HTTP-RPC` server
+                1. Set the `API's offered over the HTTP-RPC interface` using these values `admin,eth,net,web3,miner,personal,txpool,debug`
+                1. Accept cross-origin requests from any domain using this value `*`
+                1. Set the `IP address` of the node
+                1. Set the `port` of the node
+                1. Unlock the `signer account` to allow it to mine, remember that you can get this account address from the keystore file `UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026`
+                1. Enable `mine`
+                1. Allow `insecure account unlocking` to allow signer account to mine
+                1. Set and Network IP to restrict network communication using a CIDR mask
+                    1. Add the private helper function `getIPNet()` 
+                       ```
+                       func getIPNet(ipAddr string) *net.IPNet {
+                           cidr := ipAddr + subnetRange
+                           _, ipNet, _ := net.ParseCIDR(cidr)
+                           return ipNet
+                       }
+                       ```
+                    1. Call the private helper `getIPNet()` and passes it the bootnode's IP address
+                1. Set the `filepath of the password file` that allows you to avoid entering the password manually when you want to execute a command
+        1. Calls the `networkCtx.AddService()` method and passes it the service identifier, the container configuration and the runtime configuration
+        1. Verify if everything is working well on this test at this point
+            1. Run `scripts/build-and-run.sh all --tests myAdvancedTest`
+            1. Verify that the output of the build-and-run.sh script indicates that one test ran (myAdvancedTest) and that it passed.
+        1. Checks if the bootnode service is up and running
+            1. Use the `networkCtx.WaitForEndpointAvailability()` method to check availability
         1. Get the bootnode's ENR address            
             1. Execute the following Geth command inside the service to get the ENR address
             ```

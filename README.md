@@ -11,8 +11,6 @@ Ethereum On-Boarding Testsuite
     1. Verify that the output of the build-and-run.sh script indicates that one test ran (my_test) and that it passed.
 1. Import the dependencies that are used in this example test suite.
    1. Run `go get github.com/ethereum/go-ethereum/ethclient`
-   1. Run `go get github.com/sirupsen/logrus`
-   1. Run `go get github.com/palantir/stacktrace`
 1. Set up a single node Ethereum testnet in Kurtosis
     1. In your preferred IDE, open the Ethereum single node test `my_test` at `testsuite/testsuite_impl/my_test/my_test.go`
     1. Set the container configuration for the Ethereum container in your testnet.

@@ -11,6 +11,8 @@ Ethereum On-Boarding Testsuite
     1. Verify that the output of the build-and-run.sh script indicates that one test ran (my_test) and that it passed.
 1. Import the dependencies that are used in this example test suite.
    1. Run `go get github.com/ethereum/go-ethereum/ethclient`
+   1. Run `go get github.com/sirupsen/logrus`
+   1. Run `go get github.com/palantir/stacktrace`
 1. Set up a single node Ethereum testnet in Kurtosis
     1. In your preferred IDE, open the Ethereum single node test `my_test` at `testsuite/testsuite_impl/my_test/my_test.go`
     1. Set the container configuration for the Ethereum container in your testnet.
@@ -299,7 +301,7 @@ Ethereum On-Boarding Testsuite
                return runConfigFunc
            } 
           ```
-       1. Add the following ```` helper function at the bottom of the test file
+       1. Add the following `sendRpcCall` helper function at the bottom of the test file
        ```
        func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{}) error {
            rpcPort := 8545
@@ -365,7 +367,7 @@ Ethereum On-Boarding Testsuite
            return nil
        } 
        ```
-       1. Add the following `validatePeersQuantity()` helper function at the bottom of the test file
+       1. Add the following `getEnodeAddress()` helper function at the bottom of the test file
        ```
        func getEnodeAddress(ipAddress string) (string, error) {
            nodeInfoResponse := new(NodeInfoResponse)
@@ -379,7 +381,7 @@ Ethereum On-Boarding Testsuite
        ```   
        1. Add the following `starEthNodeByBootnode()` private helper function which start a ETH node using the bootnode and checks for its peers
        ```
-       _func starEthNodeByBootnode(networkCtx *networks.NetworkContext, serviceID services.ServiceID, bootnodeEnr string, nodesEnode []string) (string, error) {
+       func starEthNodeByBootnode(networkCtx *networks.NetworkContext, serviceID services.ServiceID, bootnodeEnr string, nodesEnode []string) (string, error) {
             containerCreationConfig := getContainerCreationConfigForETHNode()
             runConfigFunc := getRunConfigFuncForETHNode(bootnodeEnr)
                 
@@ -427,7 +429,7 @@ Ethereum On-Boarding Testsuite
             }
         
             return enode, nil
-       }_
+       }
        ```
        1. Add the following lines before the return sentence in the `Setup()` method
        ```
@@ -447,7 +449,7 @@ Ethereum On-Boarding Testsuite
 1. Deploy the the `hello_world` smart contract into the private network to test an Ethereum transaction
     1. Edit the test logic inside the `Run()` method to verify advanced functionality of the private multiple node Ethereum network.
         1. Rename the `serviceId` parameter value to `bootnode` in the `GetServiceContext()` call inside the `Run()` method
-        1. Remove all the current code relate to `ExecCommand` executions  //TODO improve this sentence
+        1. Remove all the current code relate to `ExecCommand` executions  //TODO improve the writing of this sentence
         1. Add the following `getPrivateKey()` helper function at the bottom of the test file in order to get the signer's private key
         ```
         func getPrivateKey(serviceCtx *services.ServiceContext) (*keystore.Key, error) {
@@ -537,7 +539,7 @@ Ethereum On-Boarding Testsuite
         
            name, err := helloWorld.Greet(&bind.CallOpts{Pending: true})
            if err != nil {
-                log.Fatalf("Failed to retrieve pending name: %v", err)
+                logrus.Fatalf("Failed to retrieve pending name: %v", err)
            }
            fmt.Println("Pending name:", name)
         

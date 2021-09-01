@@ -57,14 +57,14 @@ Ethereum On-Boarding Testsuite
             ```
     1. Add an availability check to the `Setup()` method to make sure your Ethereum node is fully functional before your test starts.
         1. Write logic to check for the availability of your Ethereum node
-            1. Add the following code to the bottom of your `Setup()` method
+            1. Add the following code to the bottom of your `Setup()` method in order to use Kurtosis function `networkCtx.WaitForEndpointAvailability()`
                ```
                adminInfoRpcCall  := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
                if err := networkCtx.WaitForEndpointAvailability("my-eth-client", kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, 8545, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
                     return "", stacktrace.Propagate(err, "An error occurred waiting for service with ID '%v' to start", "bootnode")
                }
             
-               logrus.Infof("Added Ethereum Go Client service with host port bindings: %+v", hostPortBindings)
+               logrus.Infof("Added Ethereum Go Client service with IP: %v andhost port bindings: %+v", serviceCtx.GetIPAddress(), hostPortBindings)
                ```
         1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that one test ran (myTest) and that it passed
 1. Write test logic in the `Run()` method to verify basic functionality of the single node Ethereum network.
@@ -147,7 +147,20 @@ Ethereum On-Boarding Testsuite
 
 1. Create a private Ethereum test network in Kurtosis with multiple nodes, that uses **Clique consensus** as proof of authority and that is previously set in the **genesis block**, with a **signer account**.
     1. Setup a bootnode first
-        1. Refactor the Setup() method of the test `my_test.go` in order to start the Ethereum private network with multiple nodes
+        1. Edit the `Configure()` method of the test `my_test.go`
+           1. Replace the body with the following code
+           ```
+           builder.WithSetupTimeoutSeconds(
+               240,
+           ).WithRunTimeoutSeconds(
+               240,
+           ).WithStaticFileFilepaths(map[services.StaticFileID]string{
+               genesisStaticFileID:  genesisStaticFilePath,
+               signerKeystoreFileID: signerKeystoreFilePath,
+               passwordStaticFileID: passwordStaticFilePath,
+           })
+           ```
+        1. Edit the Setup() method of the test `my_test.go` in order to start the Ethereum private network with multiple nodes
             1. In your preferred IDE, open the recent edited test `my_test` at `testsuite/testsuite_impl/my_test/my_test.go`
             1. Edit the container configuration to setup an Ethereum bootnode container
                1. Replace the `getContainerCreationConfig()` function body with this body
@@ -176,6 +189,7 @@ Ethereum On-Boarding Testsuite
                 1. Add the following `getIPNet()` helper function to the bottom of the test file.
                 ```
                    func getIPNet(ipAddr string) *net.IPNet {
+                       subnetRange := "/24" 
                        cidr := ipAddr + subnetRange
                        _, ipNet, _ := net.ParseCIDR(cidr)   
                        return ipNet
@@ -217,17 +231,7 @@ Ethereum On-Boarding Testsuite
                 ```
             1. Rename the `serviceId` parameter value to `bootnode` in the `AddService()` call inside the `Setup()` method
             1. Checks if the bootnode service is up and running
-                1. Use the Kurtosis functionality `networkCtx.WaitForEndpointAvailability()` method to check availability
-                    1. Replace the current check availability code
-                        1. Remove lines from `firstNodeUp := false` to `logrus.Infof("Added Ethereum Go Client service with host port bindings: %+v", hostPortBindings)` inside the `Setup()` method
-                        1. Add these lines to check availability
-                        ```
-                        rpcPort := 8545
-                        adminInfoRpcCall  := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
-                        if err := networkCtx.WaitForEndpointAvailability("bootnode", kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, rpcPort, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
-                            return "", stacktrace.Propagate(err, "An error occurred waiting for service with ID '%v' to start", "bootnode")
-                        }
-                        ```
+                1. Rename the `serviceId` parameter value to `bootnode` in the `WaitForEndpointAvailability()` call inside the `Setup()` method
         1. Get the bootnode's ENR address            
             1. Add the following lines before the return sentence in the `Setup()` method
             ```
@@ -243,7 +247,9 @@ Ethereum On-Boarding Testsuite
                 return "", stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
             }
         
-            enr := string(*logOutput)
+            bootNodeENR := string(*logOutput)
+           
+            logrus.Infof("Bootnode ENR address: %v", bootNodeENR)
             ```
     1. Start the remaining nodes with the help of the bootnode
        1. Set a new container configuration (used by the remaining nodes) for the Ethereum container in your testnet.
@@ -270,7 +276,6 @@ Ethereum On-Boarding Testsuite
                return containerCreationConfig
           }
           ```
-          
        1. Set a new runtime configuration (used by the remaining nodes) for the Ethereum container in your testnet.
           1. Add the following `getRunConfigFuncForETHNode()` helper function at the bottom of the test file
           ```
@@ -294,6 +299,47 @@ Ethereum On-Boarding Testsuite
                return runConfigFunc
            } 
           ```
+       1. Add the following ```` helper function at the bottom of the test file
+       ```
+       func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{}) error {
+           rpcPort := 8545
+           rpcRequestTimeout := 30 * time.Second
+
+           url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
+           var jsonByteArray = []byte(rpcJsonString)
+        
+           logrus.Debugf("Sending RPC call to '%v' with JSON body '%v'...", url, rpcJsonString)
+        
+           client := http.Client{
+            Timeout: rpcRequestTimeout,
+           }
+           resp, err := client.Post(url, "application/json", bytes.NewBuffer(jsonByteArray))
+           if err != nil {
+                return stacktrace.Propagate(err, "Failed to send RPC request to geth node with ip '%v'", ipAddress)
+           }
+           defer resp.Body.Close()
+        
+           if resp.StatusCode == http.StatusOK {
+               // For debugging
+               var teeBuf bytes.Buffer
+               tee := io.TeeReader(resp.Body, &teeBuf)
+               bodyBytes, err := ioutil.ReadAll(tee)
+               if err != nil {
+                    return stacktrace.Propagate(err, "Error parsing geth node response into bytes.")
+               }
+               bodyString := string(bodyBytes)
+               logrus.Tracef("Response for RPC call %v: %v", rpcJsonString, bodyString)
+            
+               err = json.NewDecoder(&teeBuf).Decode(targetStruct)
+               if err != nil {
+                    return stacktrace.Propagate(err, "Error parsing geth node response into target struct.")
+               }
+               return nil
+           } else {
+               return stacktrace.NewError("Received non-200 status code rom admin RPC api: %v", resp.StatusCode)
+           }
+       }
+       ```
        1. Add the following `AddPeer()` helper function at the bottom of the test file
        ```
        func AddPeer(ipAddress string, peerEnode string) (bool, error) {
@@ -309,6 +355,8 @@ Ethereum On-Boarding Testsuite
        1. Add the following `validatePeersQuantity()` helper function at the bottom of the test file
        ```
        func validatePeersQuantity(logString string, serviceID services.ServiceID, nodesEnode []string) error {
+           enodePrefix := "enode://"
+           handshakeProtocol := "eth: \"handshake\""
            peersQuantity := strings.Count(logString, enodePrefix) - strings.Count(logString, handshakeProtocol)
            validPeersQuantity := len(nodesEnode) + 1
            if peersQuantity != validPeersQuantity {
@@ -316,10 +364,22 @@ Ethereum On-Boarding Testsuite
            }
            return nil
        } 
+       ```
+       1. Add the following `validatePeersQuantity()` helper function at the bottom of the test file
+       ```
+       func getEnodeAddress(ipAddress string) (string, error) {
+           nodeInfoResponse := new(NodeInfoResponse)
+           adminInfoRpcCall := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
+           err := sendRpcCall(ipAddress, adminInfoRpcCall, nodeInfoResponse)
+           if err != nil {
+                return "", stacktrace.Propagate(err, "Failed to send admin node info RPC request to geth node with ip %v", ipAddress)
+           }
+           return nodeInfoResponse.Result.Enode, nil
+       }
        ```   
        1. Add the following `starEthNodeByBootnode()` private helper function which start a ETH node using the bootnode and checks for its peers
        ```
-       func starEthNodeByBootnode(networkCtx *networks.NetworkContext, serviceID services.ServiceID, bootnodeEnr string, nodesEnode []string) (string, error) {
+       _func starEthNodeByBootnode(networkCtx *networks.NetworkContext, serviceID services.ServiceID, bootnodeEnr string, nodesEnode []string) (string, error) {
             containerCreationConfig := getContainerCreationConfigForETHNode()
             runConfigFunc := getRunConfigFuncForETHNode(bootnodeEnr)
                 
@@ -330,9 +390,8 @@ Ethereum On-Boarding Testsuite
         
             logrus.Infof("Added Ethereum Node %v service with host port bindings: %+v and IP address '%v'", serviceID, hostPortBindings, serviceCtx.GetIPAddress())
         
-            rpcPort := 8545
             adminInfoRpcCall := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
-            if err := networkCtx.WaitForEndpointAvailability(serviceID, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, rpcPort, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
+            if err := networkCtx.WaitForEndpointAvailability(serviceID, kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, 8545, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
                 return "", stacktrace.Propagate(err, "An error occurred waiting for service with ID '%v' to start", serviceID)
             }
         
@@ -368,17 +427,18 @@ Ethereum On-Boarding Testsuite
             }
         
             return enode, nil
-       }
+       }_
        ```
        1. Add the following lines before the return sentence in the `Setup()` method
        ```
        var nodesEnode []string
        numGethNodes := 3
+       gethServiceIdPrefix := "ethereum-node-"
        for i := 1; i <= numGethNodes; i++ {
            serviceID := services.ServiceID(gethServiceIdPrefix + strconv.Itoa(i))
-           enode, err := starEthNodeByBootnode(networkCtx, serviceID, bootNodeEnr, nodesEnode)
+           enode, err := starEthNodeByBootnode(networkCtx, serviceID, bootNodeENR, nodesEnode)
            if err != nil {
-           return nil, stacktrace.Propagate(err, "An error occurred starting the Ethereum Node '%v'", serviceID)
+                return nil, stacktrace.Propagate(err, "An error occurred starting the Ethereum Node '%v'", serviceID)
            }
            nodesEnode = append(nodesEnode, enode)
        }
@@ -387,7 +447,7 @@ Ethereum On-Boarding Testsuite
 1. Deploy the the `hello_world` smart contract into the private network to test an Ethereum transaction
     1. Edit the test logic inside the `Run()` method to verify advanced functionality of the private multiple node Ethereum network.
         1. Rename the `serviceId` parameter value to `bootnode` in the `GetServiceContext()` call inside the `Run()` method
-        1. Remove all the current code relate to `ExecCommand` executions
+        1. Remove all the current code relate to `ExecCommand` executions  //TODO improve this sentence
         1. Add the following `getPrivateKey()` helper function at the bottom of the test file in order to get the signer's private key
         ```
         func getPrivateKey(serviceCtx *services.ServiceContext) (*keystore.Key, error) {
@@ -434,6 +494,7 @@ Ethereum On-Boarding Testsuite
         ```
         func waitUntilTransactionMined(validatorClient *ethclient.Client, transactionHash common.Hash) error {
            maxNumCheckTransactionMinedRetries := 10 
+           timeBetweenCheckTransactionMinedRetries := 1 * time.Second
            for i := 0; i < maxNumCheckTransactionMinedRetries; i++ {
                receipt, err := validatorClient.TransactionReceipt(context.Background(), transactionHash)
                if err == nil && receipt != nil && receipt.BlockNumber != nil {
@@ -459,7 +520,7 @@ Ethereum On-Boarding Testsuite
         
            transactor, err := bind.NewKeyedTransactorWithChainID(key.PrivateKey, big.NewInt(15))
            if err != nil {
-                log.Fatalf("Failed to create authorized transactor: %v", err)
+                logrus.Fatalf("Failed to create authorized transactor: %v", err)
            }
            transactor.GasPrice = big.NewInt(5)
            address, tx, helloWorld, err := bindings.DeployHelloWorld(transactor, gethClient)

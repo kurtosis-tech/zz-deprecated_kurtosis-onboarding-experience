@@ -56,72 +56,14 @@ Ethereum On-Boarding Testsuite
             }
             ```
     1. Add an availability check to the `Setup()` method to make sure your Ethereum node is fully functional before your test starts.
-        1. Add a helper function `sendRpcCall` to send RPC calls to the Ethereum node to the bottom of the test file.
-           ```
-           func sendRpcCall(ipAddress string, rpcJsonString string, targetStruct interface{}) error {
-             rpcPort := 8545
-             url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
-             var jsonByteArray = []byte(rpcJsonString)
-            
-             resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonByteArray))
-             if err != nil {
-                return stacktrace.Propagate(err, "Failed to send RPC request to geth node")
-             }
-             defer resp.Body.Close()
-            
-             if resp.StatusCode != http.StatusOK {
-                return stacktrace.NewError("Received non-200 status code from admin RPC API: %v", resp.StatusCode)
-             }
-            
-             // For debugging
-             var teeBuf bytes.Buffer
-             tee := io.TeeReader(resp.Body, &teeBuf)
-             bodyBytes, err := ioutil.ReadAll(tee)
-             if err != nil {
-                 return stacktrace.Propagate(err, "Error parsing geth node response into bytes.")
-             }
-             bodyString := string(bodyBytes)
-             logrus.Debugf("Response for RPC call %v: %v", rpcJsonString, bodyString)
-            
-             if err = json.NewDecoder(&teeBuf).Decode(targetStruct); err != nil {
-                 return stacktrace.Propagate(err, "Error parsing geth node response into target struct.")
-             }
-            
-             return nil
-           }
-           ```
-        1. Add a helper function to retrieve the enode address of an Ethereum node to the bottom of the test file.
-           ```
-           func getEnodeAddress(ipAddress string) (string, error) {
-               nodeInfoResponse := new(NodeInfoResponse)
-               adminInfoRpcCall := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
-               err := sendRpcCall(ipAddress, adminInfoRpcCall, nodeInfoResponse)
-               if err != nil {
-                   return "", stacktrace.Propagate(err, "Failed to send admin node info RPC request to geth node.")
-               }
-               return nodeInfoResponse.Result.Enode, nil
-           }
-           ```
         1. Write logic to check for the availability of your Ethereum node
             1. Add the following code to the bottom of your `Setup()` method
                ```
-               firstNodeUp := false
-               waitForStartupMaxPolls := 90
-               waitForStartupTimeBetweenPolls := 1 * time.Second
-               for pollCount := 0; pollCount < waitForStartupMaxPolls; pollCount++ {
-                  enodeAddress, err := getEnodeAddress(serviceContext.GetIPAddress())
-                  if err == nil {
-                     firstNodeUp = true
-                     logrus.Infof("Enode address: %v", enodeAddress)
-                     break
-                  }
-                  time.Sleep(waitForStartupTimeBetweenPolls)
+               adminInfoRpcCall  := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
+               if err := networkCtx.WaitForEndpointAvailability("my-eth-client", kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, 8545, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
+                    return "", stacktrace.Propagate(err, "An error occurred waiting for service with ID '%v' to start", "bootnode")
                }
-               
-               if !firstNodeUp {
-                  return nil, stacktrace.Propagate(err, "First geth node failed to come up")
-               }
-               
+            
                logrus.Infof("Added Ethereum Go Client service with host port bindings: %+v", hostPortBindings)
                ```
         1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that one test ran (myTest) and that it passed

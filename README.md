@@ -50,7 +50,7 @@ Ethereum On-Boarding Testsuite
             containerCreationConfig := getContainerCreationConfig()
             runConfigFunc := getRunConfigFunc()
           
-            serviceContext, hostPortBindings, err := networkCtx.AddService("my-eth-client", containerCreationConfig, runConfigFunc)
+            serviceCtx, hostPortBindings, err := networkCtx.AddService("my-eth-client", containerCreationConfig, runConfigFunc)
             if err != nil {
                 return nil, stacktrace.Propagate(err, "An error occurred adding the Ethereum Go Client service")
             }

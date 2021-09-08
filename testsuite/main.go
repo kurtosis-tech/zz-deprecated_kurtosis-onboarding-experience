@@ -15,7 +15,7 @@ const (
 
 func main() {
 
-	configurator := execution_impl.MyTestsuiteConfigurator{}
+	configurator := execution_impl.EthereumTestsuiteConfigurator{}
 
 	suiteExecutor := execution.NewTestSuiteExecutor(configurator)
 	if err := suiteExecutor.Run(); err != nil {

@@ -7,13 +7,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type MyTestsuiteConfigurator struct {}
+type EthereumTestsuiteConfigurator struct {}
 
-func NewMyTestsuiteConfigurator() *MyTestsuiteConfigurator {
-	return &MyTestsuiteConfigurator{}
-}
-
-func (t MyTestsuiteConfigurator) SetLogLevel(logLevelStr string) error {
+func (t EthereumTestsuiteConfigurator) SetLogLevel(logLevelStr string) error {
 	level, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing loglevel string '%v'", logLevelStr)
@@ -26,7 +22,7 @@ func (t MyTestsuiteConfigurator) SetLogLevel(logLevelStr string) error {
 	return nil
 }
 
-func (t MyTestsuiteConfigurator) ParseParamsAndCreateSuite(paramsJsonStr string) (testsuite.TestSuite, error) {
-	suite := &testsuite_impl.MyTestsuite{}
+func (t EthereumTestsuiteConfigurator) ParseParamsAndCreateSuite(paramsJsonStr string) (testsuite.TestSuite, error) {
+	suite := &testsuite_impl.EthereumTestsuite{}
 	return suite, nil
 }

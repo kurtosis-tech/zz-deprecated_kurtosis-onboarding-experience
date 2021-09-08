@@ -1,20 +1,23 @@
-Ethereum On-Boarding Testsuite
-==============================
+Kurtosis Ethereum Testsuite Tutorial
+====================================
+This repo is an empty Kurtosis testsuite. The instructions below will walk you through creating a Kurtosis test that spins up a private Ethereum network and runs test logic against it. By the end of this tutorial, you will have seen how Kurtosis testing works.
 
-Implement A Single-Node Ethereum Test Network
----------------------------------------------
-### Set Up Prerequisites
+Set up prerequisites (5min)
+---------------------------
 1. Create a Kurtosis account on [the signup page](https://www.kurtosistech.com/sign-up) if you don't have one yet
-1. Verify that the Docker daemon is running on your local machine using `docker container ls`
-1. Clone this testsuite repository by running `git clone https://github.com/kurtosis-tech/kurtosis-onboarding-experience.git --branch master`
-1. Run the testsuite to verify that everything works on your local machine:
-    1. Run `bash scripts/build-and-run.sh all`
-    1. Verify that the output indicates that one test, `MyTest`, ran and passed
+1. Verify that you have the Docker daemon installed and running on your local machine by running `docker image ls`
+    * If you don't have Docker installed, do so by following [the installation instructions](https://docs.docker.com/get-docker/)
+    * If Docker is installed but not running, start it
+1. Clone this repository by running `git clone https://github.com/kurtosis-tech/kurtosis-onboarding-experience.git --branch master && cd kurtosis-onboarding-experience`
+1. Verify that the testsuite runs on your local machine with `bash scripts/build-and-run.sh all`
+1. Ensure the output indicates that one test, `MyTest`, ran and passed
 
-### Set up a one-node Ethereum testnet inside Kurtosis
-Here we'll modify `MyTest`, which currently doesn't do anything, to instantiate an Ethereum network of one node:
+Write a test that creates an Ethereum network and runs test logic against it (15min)
+------------------------------------------------------------------------------------
+### Configure a test to launch a private Ethereum network inside Kurtosis (5min)
+Here we'll modify `BasicEthereumTest`, which currently doesn't do anything, to instantiate an Ethereum network of one node:
 
-1. In your preferred IDE, open `MyTest` inside file `testsuite/testsuite_impl/my_test/my_test_.go`
+1. In your preferred IDE, open `BasicEthereumTest` inside file `testsuite/testsuite_impl/basic_ethereum_test/basic_ethereum_test_.go`
 1. At the bottom of the file under the `Private helper functions` header, add the following helper function for creating an Ethereum node container (**NOTE:** you can copy this entire code snippet by hovering over the block and clicking the clipboard icon in the top-right corner):
 
     ```golang
@@ -73,11 +76,11 @@ Here we'll modify `MyTest`, which currently doesn't do anything, to instantiate 
     logrus.Infof("Added Ethereum Go Client service with IP: %v andhost port bindings: %+v", serviceCtx.GetIPAddress(), hostPortBindings)
     ```
 
-1. Run `bash scripts/build-and-run.sh all` and verify that `MyTest` is still passing
+1. Run `bash scripts/build-and-run.sh all` and verify that `BasicEthereumTest` is still passing
 1. If you'd like, you can run `docker container ls -a` and ensure that the test started an Ethereum container
 
-### Write test logic to get the Ethereum chain ID from the network
-Now that our test is creating an Ethereum network every time, let's write some logic to interact with it it:
+### Configure the test to run test logic against the private Ethereum network (5min)
+Now that our test is creating an Ethereum network every time it runs, let's write some logic to interact with it it:
 
 1. Add another helper function under the `Private helper functions` section to get a Go Ethereum client:
 
@@ -112,26 +115,25 @@ Now that our test is creating an Ethereum network every time, let's write some l
     defer gethClient.Close()
     ```
 
-<!-- TODO TODO Rename this to be consistent between chain ID & network ID???? -->
 1. Replace the `//TODO Replace with code for get the ETH network's chain ID` line with the following code for getting the network's Ethereum chain ID:
 
+    <!-- TODO TODO Rename this to be consistent between chain ID & network ID???? -->
     ```golang
     networkId, err := gethClient.NetworkID(context.Background())
     if err != nil {
         return stacktrace.Propagate(err, "Failed to get network ID")
     }
     logrus.Infof("Chain ID: %v", networkId)
-    ```   
+    ```
 
-1. Verify that `MyTest` passes when running `bash scripts/build-and-run.sh all`, and that it prints out the Ethereum chain ID
+1. Verify that `BasicEthereumTest` passes when running `bash scripts/build-and-run.sh all`, and that it prints out the Ethereum chain ID
 
-### Improve our test logic to send a transaction to the Ethereum testnet
+### Extend our test logic to send a transaction to the Ethereum testnet (5min)
 We now know that the Ethereum network responds to requests, so let's send a transaction to it:
 
-1. Replace the `//TODO Replace with code for create a new ETH account` 
+1. Replace the `//TODO Replace with code for create a new ETH account` line in the test's `Run` method with the following code that uses the Ethereum IPC commands in [the official documentation](https://geth.ethereum.org/docs/getting-started/dev-mode) to create an ETH account using the Ethereum IPC API:
 
-    1. Use the `ExecCommand()` on the Kurtosis service context to execute commands from the [official Geth documentation](https://geth.ethereum.org/docs/getting-started/dev-mode).
-    ```
+    ```golang
     exitCode, logOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
       fmt.Sprintf("printf \"passphrase\\npassphrase\\n\" | geth attach /tmp/geth.ipc --exec 'personal.newAccount()'"),
     })
@@ -142,6 +144,11 @@ We now know that the Ethereum network responds to requests, so let's send a tran
        return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
     }
     logrus.Infof("Logs: %+v", string(*logOutput))   
+    ```
+
+1. Replace the `//TODO Replace with code for sending an ETH transaction` line with the following code to create an ETH transfer transaction:
+
+    ```golang
     exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
        fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(0.05, \"ether\")})'"),
     })
@@ -152,6 +159,11 @@ We now know that the Ethereum network responds to requests, so let's send a tran
        return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
     }
     logrus.Infof("Logs: %+v", string(*logOutput))   
+    ```
+
+1. Replace the `//TODO Replace with code for getting the account's ETH balance` line with the following code to verify that the account balance got updated:
+
+    ```golang
     exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
        fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.getBalance(eth.accounts[1])'"),
     })
@@ -163,7 +175,8 @@ We now know that the Ethereum network responds to requests, so let's send a tran
     }
     logrus.Infof("Logs: %+v", string(*logOutput))
     ```
-    1. Verify that running `bash scripts/build-and-run.sh all` shows one passing test (my_test) that contains the business logic for an Ethereum single node network
+
+1. Finally, verify that running `bash scripts/build-and-run.sh all` still shows `BasicEthereumTest` as passing
 
 Implement an Advanced Test which test and Ethereum Private Network with Multiple Nodes
 --------------------------------------------------------------------------------------

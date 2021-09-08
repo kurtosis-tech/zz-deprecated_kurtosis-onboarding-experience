@@ -70,7 +70,7 @@ Step Two: Fill In BasicEthereumTest (15min)
     containerCreationConfig := getContainerCreationConfig()
     runConfigFunc := getRunConfigFunc()
 
-    serviceCtx, hostPortBindings, err := networkCtx.AddService(node0ServiceID, containerCreationConfig, runConfigFunc)
+    serviceCtx, _, err := networkCtx.AddService(node0ServiceID, containerCreationConfig, runConfigFunc)
     if err != nil {
         return nil, stacktrace.Propagate(err, "An error occurred adding the Ethereum node")
     }
@@ -81,7 +81,7 @@ Step Two: Fill In BasicEthereumTest (15min)
 
     ```golang
     adminInfoRpcCall  := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
-    if err := networkCtx.WaitForEndpointAvailability(serviceCtx.GetServiceID(), kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, ethereumNodeRpcPort, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
+    if err := networkCtx.WaitForEndpointAvailability(serviceCtx.GetServiceID(), kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, ethereumNodeRpcPort, "", adminInfoRpcCall, nodeAvailabilityCheckInitialDelaySeconds, nodeAvailabilityCheckNumRetries, nodeAvailabilityCheckRetryWaitMilliseconds, ""); err != nil {
         return "", stacktrace.Propagate(err, "An error occurred waiting for Ethereum node '%v' to become available", serviceCtx.GetServiceID())
     }
     logrus.Infof("Ethereum node '%v' is now available", serviceCtx.GetServiceID())

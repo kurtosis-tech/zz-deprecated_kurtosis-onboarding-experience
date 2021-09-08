@@ -10,6 +10,10 @@ const (
 	ethereumNodeImage = "ethereum/client-go"
 	ethereumNodeRpcPort = 8545
 
+	nodeAvailabilityCheckInitialDelaySeconds = 0
+	nodeAvailabilityCheckNumRetries = 30
+	nodeAvailabilityCheckRetryWaitMilliseconds = 1000
+
 	node0ServiceID services.ServiceID = "node-0"
 
 	genesisStaticFileID    services.StaticFileID = "genesis.json"

@@ -143,7 +143,7 @@ Now that our test is creating an Ethereum network every time it runs, let's writ
     defer gethClient.Close()
     ```
 
-1. Replace the `//TODO Get ETH network's chain ID` line with the following code for getting the Ethereum network ID:
+1. Replace the `//TODO Get ETH network's chain ID` line with the following code for getting the Ethereum network ID (**NOTE:** you might need to instruct your IDE which `context` to import; it should be the package from the Go standard library):
 
     ```golang
     networkId, err := gethClient.NetworkID(context.Background())

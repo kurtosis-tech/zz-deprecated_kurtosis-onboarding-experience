@@ -7,6 +7,11 @@ import (
 )
 
 const (
+	ethereumNodeImage = "ethereum/client-go"
+	ethereumNodeRpcPort = 8545
+
+	node0ServiceID services.ServiceID = "node-0"
+
 	genesisStaticFileID    services.StaticFileID = "genesis.json"
 	genesisStaticFilePath                        = "/data/genesis.json"
 	passwordStaticFileID   services.StaticFileID = "password.txt"

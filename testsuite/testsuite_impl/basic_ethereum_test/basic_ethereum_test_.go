@@ -62,5 +62,5 @@ func (test BasicEthereumTest) Run(uncastedNetwork networks.Network) error {
 //TODO Replace with helper function to get container creation config
 
 //TODO Replace with helper function to get container run config
-k
+
 //TODO Replace with helper function to create a Go Ethereum client

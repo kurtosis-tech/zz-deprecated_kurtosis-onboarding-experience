@@ -38,9 +38,9 @@ Step Two: Fill In BasicEthereumTest (15min)
     ```golang
     func getContainerCreationConfig() *services.ContainerCreationConfig {
         containerCreationConfig := services.NewContainerCreationConfigBuilder(
-            "ethereum/client-go",
+            ethereumNodeImage,
         ).WithUsedPorts(
-            map[string]bool{fmt.Sprintf("%v/tcp", 8545): true},
+            map[string]bool{fmt.Sprintf("%v/tcp", ethereumNodeRpcPort): true},
         ).Build()
         return containerCreationConfig
     }
@@ -74,25 +74,38 @@ Step Two: Fill In BasicEthereumTest (15min)
     containerCreationConfig := getContainerCreationConfig()
     runConfigFunc := getRunConfigFunc()
 
-    serviceCtx, hostPortBindings, err := networkCtx.AddService("my-eth-client", containerCreationConfig, runConfigFunc)
+    serviceCtx, hostPortBindings, err := networkCtx.AddService(node0ServiceID, containerCreationConfig, runConfigFunc)
     if err != nil {
-        return nil, stacktrace.Propagate(err, "An error occurred adding the Ethereum Go Client service")
+        return nil, stacktrace.Propagate(err, "An error occurred adding the Ethereum node")
     }
+    logrus.Infof("Added Ethereum node '%v' with IP '%v'", serviceCtx.GetServiceID(), serviceCtx.GetIPAddress())
     ```
 
 1. In the same `Setup` method, replace `//TODO Replace with code for checking if the Ethereum network is available` with the following code to ensure that the test setup doesn't complete until the Ethereum node is available:
 
     ```golang
     adminInfoRpcCall  := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
-    if err := networkCtx.WaitForEndpointAvailability("my-eth-client", kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, 8545, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
-        return "", stacktrace.Propagate(err, "An error occurred waiting for service with ID '%v' to start", "bootnode")
+    if err := networkCtx.WaitForEndpointAvailability(serviceCtx.GetServiceID(), kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, ethereumNodeRpcPort, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
+        return "", stacktrace.Propagate(err, "An error occurred waiting for Ethereum node '%v' to become available", serviceCtx.GetServiceID())
     }
-
-    logrus.Infof("Added Ethereum Go Client service with IP: %v andhost port bindings: %+v", serviceCtx.GetIPAddress(), hostPortBindings)
+    logrus.Infof("Ethereum node '%v' is now available", serviceCtx.GetServiceID())
     ```
 
-1. Run `bash scripts/build-and-run.sh all` and verify that `BasicEthereumTest` is still passing
-1. If you'd like, you can run `docker container ls -a` and ensure that the test started an Ethereum container
+1. Verify that `BasicEthereumTest` is still passing with:
+
+    ```
+    bash scripts/build-and-run.sh all
+    ```
+
+1. Ensure that the output contains the following loglines indicating the Ethereum node started successfully (noting that the node's IP will be nondeterministic):
+
+    ```
+    Added Ethereum node 'node-0' with IP 'X.X.X.X'
+    ```
+
+    ```
+    Ethereum node 'node-0' is now available
+    ```
 
 ### Configure the test to run test logic against the private Ethereum network (5min)
 Now that our test is creating an Ethereum network every time it runs, let's write some logic to interact with it it:
@@ -101,8 +114,7 @@ Now that our test is creating an Ethereum network every time it runs, let's writ
 
     ```golang
     func getEthClient(ipAddress string) (*ethclient.Client, error) {
-        rpcPort := 8545
-        url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
+        url := fmt.Sprintf("http://%v:%v", ipAddress, ethereumNodeRpcPort)
         client, err := ethclient.Dial(url)
         if err != nil {
             return nil, stacktrace.Propagate(err, "An error occurred getting the Golang Ethereum client")
@@ -114,34 +126,41 @@ Now that our test is creating an Ethereum network every time it runs, let's writ
 1. Replace the `//TODO Replace with code for getting a Go Ethereum client` line in the test's `Run` method with the following code to get a Go client for interacting with the Ethereum node:
 
     ```golang
-    // Necessary because Go doesn't have generics
     castedNetwork := uncastedNetwork.(*networks.NetworkContext)
        
-    serviceCtx, err := castedNetwork.GetServiceContext("my-eth-client")
+    serviceCtx, err := castedNetwork.GetServiceContext(node0ServiceID)
     if err != nil {
-       return stacktrace.Propagate(err, "An error occurred getting the Ethereum node's service context")
+       return stacktrace.Propagate(err, "An error occurred getting the service context for Ethereum node '%v'", node0ServiceID)
     }
-    logrus.Infof("Got service context for Ethereum node '%v'", serviceCtx.GetServiceID())
        
     gethClient, err := getEthClient(serviceCtx.GetIPAddress())
     if err != nil {
-       return stacktrace.Propagate(err, "Failed to get a Go Ethereum client for the Ethereum node")
+       return stacktrace.Propagate(err, "Failed to create a Go client for Ethereum node '%v'", node0ServiceID)
     }
     defer gethClient.Close()
     ```
 
-1. Replace the `//TODO Replace with code for getting the ETH network's chain ID` line with the following code for getting the network's Ethereum chain ID:
+1. Replace the `//TODO Replace with code for getting the ETH network's chain ID` line with the following code for getting the Ethereum network ID:
 
-    <!-- TODO TODO Rename this to be consistent between chain ID & network ID???? -->
     ```golang
     networkId, err := gethClient.NetworkID(context.Background())
     if err != nil {
-        return stacktrace.Propagate(err, "Failed to get network ID")
+        return stacktrace.Propagate(err, "Failed to get Ethereum network ID")
     }
-    logrus.Infof("Chain ID: %v", networkId)
+    logrus.Infof("Network ID: %v", networkId)
     ```
 
-1. Verify that `BasicEthereumTest` passes when running `bash scripts/build-and-run.sh all`, and that it prints out the Ethereum chain ID
+1. Verify that `BasicEthereumTest` still passes with:
+
+    ```
+    bash scripts/build-and-run.sh all
+    ```
+
+1. Ensure that you see the following logline in the output indicating that the test logic ran:
+
+    ```
+    Network ID: .....
+    ```
 
 ### Extend our test logic to send a transaction to the Ethereum testnet (5min)
 We now know that the Ethereum network responds to requests, so let's send a transaction to it:

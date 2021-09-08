@@ -40,23 +40,23 @@ func (test BasicEthereumTest) Configure(builder *testsuite.TestConfigurationBuil
 
 func (test BasicEthereumTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 
-	//TODO Replace with code for starting an Ethereum single node in dev mode
+	//TODO Start a single ETH node in dev mode
 
-	//TODO Replace with code for checking if the Ethereum network is available
+	//TODO Check if the Ethereum network is available
 
 	return networkCtx, nil
 }
 
 func (test BasicEthereumTest) Run(uncastedNetwork networks.Network) error {
-	//TODO Replace with code for getting a Go Ethereum client
+	//TODO Get Go Ethereum client
 
-	//TODO Replace with code for getting the ETH network's chain ID
+	//TODO Get ETH network's chain ID
 
-	//TODO Replace with code for create a new ETH account
+	//TODO Create new ETH account
 
-	//TODO Replace with code for sending an ETH transaction
+	//TODO Make ETH transfer transaction
 
-	//TODO Replace with code for getting the account's ETH balance
+	//TODO Get ETH account balance
 
 	return nil
 }
@@ -64,8 +64,6 @@ func (test BasicEthereumTest) Run(uncastedNetwork networks.Network) error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-//TODO Replace with helper function to get container creation config
+//TODO Container creation & run config helper functions
 
-//TODO Replace with helper function to get container run config
-
-//TODO Replace with helper function to create a Go Ethereum client
+//TODO Create Go Ethereum client helper function

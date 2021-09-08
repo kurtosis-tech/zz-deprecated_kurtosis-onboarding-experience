@@ -33,7 +33,7 @@ Step Two: Fill In BasicEthereumTest (15min)
 `BasicEthereumTest` currently doesn't do anything, so we'll configure it to instantiate an Ethereum network of one node:
 
 1. In your preferred IDE, open `BasicEthereumTest` inside file `testsuite/testsuite_impl/basic_ethereum_test/basic_ethereum_test_.go`
-1. At the bottom of the file under the `Private helper functions` header, replace the `//TODO Replace with helper function to get container creation config` line with the following helper function for creating an Ethereum node container (**NOTE:** you can copy this entire code snippet by hovering over the block and clicking the clipboard icon in the top-right corner):
+1. At the bottom of the file under the `Private helper functions` header, replace the `//TODO Container creation & run config helper functions` line with the following helper functions for creating & running an Ethereum node container (**NOTE:** you can copy this entire code snippet by hovering over the block and clicking the clipboard icon in the top-right corner):
 
     ```golang
     func getContainerCreationConfig() *services.ContainerCreationConfig {
@@ -44,11 +44,7 @@ Step Two: Fill In BasicEthereumTest (15min)
         ).Build()
         return containerCreationConfig
     }
-    ```
 
-1. In the same section, replace the `//TODO Replace with helper function to get container run config` line with the following helper function for running an Ethereum node container:
-
-    ```golang
     func getRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
         runConfigFunc := func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
             entrypointCommand := fmt.Sprintf(
@@ -68,7 +64,7 @@ Step Two: Fill In BasicEthereumTest (15min)
     }
     ```
 
-1. In the test's `Setup` method, replace the `//TODO Replace with code for starting an Ethereum single node in dev mode` with the following code so that the test instantiates an Ethereum node as part of its setup:
+1. In the test's `Setup` method, replace the `//TODO Start a single ETH node in dev mode` line with the following code so that the test instantiates an Ethereum node as part of its setup:
 
     ```golang
     containerCreationConfig := getContainerCreationConfig()
@@ -81,7 +77,7 @@ Step Two: Fill In BasicEthereumTest (15min)
     logrus.Infof("Added Ethereum node '%v' with IP '%v'", serviceCtx.GetServiceID(), serviceCtx.GetIPAddress())
     ```
 
-1. In the same `Setup` method, replace `//TODO Replace with code for checking if the Ethereum network is available` with the following code to ensure that the test setup doesn't complete until the Ethereum node is available:
+1. In the same `Setup` method, replace `//TODO Check if the Ethereum network is available` with the following code to ensure that the test setup doesn't complete until the Ethereum node is available:
 
     ```golang
     adminInfoRpcCall  := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
@@ -110,7 +106,7 @@ Step Two: Fill In BasicEthereumTest (15min)
 ### Configure the test to run test logic against the private Ethereum network (5min)
 Now that our test is creating an Ethereum network every time it runs, let's write some logic to interact with it it:
 
-1. Under the `Private helper functions` section, replace the `//TODO Replace with helper function to create a Go Ethereum client` with the following:
+1. Under the `Private helper functions` section, replace the `//TODO Create Go Ethereum client helper function` line with the following:
 
     ```golang
     func getEthClient(ipAddress string) (*ethclient.Client, error) {
@@ -123,7 +119,7 @@ Now that our test is creating an Ethereum network every time it runs, let's writ
     }
     ```
 
-1. Replace the `//TODO Replace with code for getting a Go Ethereum client` line in the test's `Run` method with the following code to get a Go client for interacting with the Ethereum node:
+1. Replace the `//TODO Get Go Ethereum client` line in the test's `Run` method with the following code to get a Go client for interacting with the Ethereum node:
 
     ```golang
     castedNetwork := uncastedNetwork.(*networks.NetworkContext)
@@ -140,7 +136,7 @@ Now that our test is creating an Ethereum network every time it runs, let's writ
     defer gethClient.Close()
     ```
 
-1. Replace the `//TODO Replace with code for getting the ETH network's chain ID` line with the following code for getting the Ethereum network ID:
+1. Replace the `//TODO Get ETH network's chain ID` line with the following code for getting the Ethereum network ID:
 
     ```golang
     networkId, err := gethClient.NetworkID(context.Background())
@@ -165,7 +161,7 @@ Now that our test is creating an Ethereum network every time it runs, let's writ
 ### Extend our test logic to send a transaction to the Ethereum testnet (5min)
 We now know that the Ethereum network responds to requests, so let's send a transaction to it:
 
-1. Replace the `//TODO Replace with code for create a new ETH account` line in the test's `Run` method with the following code that uses the Ethereum IPC commands in [the official documentation](https://geth.ethereum.org/docs/getting-started/dev-mode) to create an ETH account using the Ethereum IPC API:
+1. Replace the `//TODO Create new ETH account` line in the test's `Run` method with the following code that uses the Ethereum IPC commands in [the official documentation](https://geth.ethereum.org/docs/getting-started/dev-mode) to create an ETH account using the Ethereum IPC API:
 
     ```golang
     exitCode, logOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
@@ -180,7 +176,7 @@ We now know that the Ethereum network responds to requests, so let's send a tran
     logrus.Infof("Logs: %+v", string(*logOutput))   
     ```
 
-1. Replace the `//TODO Replace with code for sending an ETH transaction` line with the following code to create an ETH transfer transaction:
+1. Replace the `//TODO Make ETH transfer transaction` line with the following code to create an ETH transfer transaction:
 
     ```golang
     exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
@@ -195,7 +191,7 @@ We now know that the Ethereum network responds to requests, so let's send a tran
     logrus.Infof("Logs: %+v", string(*logOutput))   
     ```
 
-1. Replace the `//TODO Replace with code for getting the account's ETH balance` line with the following code to verify that the account balance got updated:
+1. Replace the `//TODO Get ETH account balance` line with the following code to verify that the account balance got updated:
 
     ```golang
     exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",

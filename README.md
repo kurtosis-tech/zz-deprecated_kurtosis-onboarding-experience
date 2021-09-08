@@ -2,23 +2,23 @@ Kurtosis Ethereum Testsuite Tutorial
 ====================================
 This repo is an empty Kurtosis testsuite. The instructions below will walk you through creating a Kurtosis test that spins up a private Ethereum network and runs test logic against it. By the end of this tutorial, you will have seen how Kurtosis testing works.
 
-Set up prerequisites (5min)
----------------------------
+Step One: Set Up Prerequisites (5min)
+-------------------------------------
 1. Create a Kurtosis account on [the signup page](https://www.kurtosistech.com/sign-up) if you don't have one yet
 1. Verify that you have the Docker daemon installed and running on your local machine by running `docker image ls`
     * If you don't have Docker installed, do so by following [the installation instructions](https://docs.docker.com/get-docker/)
     * If Docker is installed but not running, start it
 1. Clone this repository by running `git clone https://github.com/kurtosis-tech/kurtosis-onboarding-experience.git --branch master && cd kurtosis-onboarding-experience`
-1. Verify that the testsuite runs on your local machine with `bash scripts/build-and-run.sh all`
-1. Ensure the output indicates that one test, `MyTest`, ran and passed
+1. Verify that the testsuite runs on your local machine with `bash scripts/build-and-run.sh all`, following the instructions for logging in with your Kurtosis account when prompted
+1. Ensure the output indicates that one test, `BasicEthereumTest`, ran and passed
 
-Write a test that creates an Ethereum network and runs test logic against it (15min)
-------------------------------------------------------------------------------------
-### Configure a test to launch a private Ethereum network inside Kurtosis (5min)
-Here we'll modify `BasicEthereumTest`, which currently doesn't do anything, to instantiate an Ethereum network of one node:
+Step Two: Fill In BasicEthereumTest (15min)
+-----------------------------------------------------------------
+### Configure the test to launch a private Ethereum network inside Kurtosis (5min)
+`BasicEthereumTest` currently doesn't do anything, so we'll configure it to instantiate an Ethereum network of one node:
 
 1. In your preferred IDE, open `BasicEthereumTest` inside file `testsuite/testsuite_impl/basic_ethereum_test/basic_ethereum_test_.go`
-1. At the bottom of the file under the `Private helper functions` header, add the following helper function for creating an Ethereum node container (**NOTE:** you can copy this entire code snippet by hovering over the block and clicking the clipboard icon in the top-right corner):
+1. At the bottom of the file under the `Private helper functions` header, replace the `//TODO Replace with helper function to get container creation config` line with the following helper function for creating an Ethereum node container (**NOTE:** you can copy this entire code snippet by hovering over the block and clicking the clipboard icon in the top-right corner):
 
     ```golang
     func getContainerCreationConfig() *services.ContainerCreationConfig {
@@ -31,7 +31,7 @@ Here we'll modify `BasicEthereumTest`, which currently doesn't do anything, to i
     }
     ```
 
-1. In the same section, add the following helper function for running an Ethereum node container:
+1. In the same section, replace the `//TODO Replace with helper function to get container run config` line with the following helper function for running an Ethereum node container:
 
     ```golang
     func getRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
@@ -82,7 +82,7 @@ Here we'll modify `BasicEthereumTest`, which currently doesn't do anything, to i
 ### Configure the test to run test logic against the private Ethereum network (5min)
 Now that our test is creating an Ethereum network every time it runs, let's write some logic to interact with it it:
 
-1. Add another helper function under the `Private helper functions` section to get a Go Ethereum client:
+1. Under the `Private helper functions` section, replace the `//TODO Replace with helper function to create a Go Ethereum client` with the following:
 
     ```golang
     func getEthClient(ipAddress string) (*ethclient.Client, error) {
@@ -115,7 +115,7 @@ Now that our test is creating an Ethereum network every time it runs, let's writ
     defer gethClient.Close()
     ```
 
-1. Replace the `//TODO Replace with code for get the ETH network's chain ID` line with the following code for getting the network's Ethereum chain ID:
+1. Replace the `//TODO Replace with code for getting the ETH network's chain ID` line with the following code for getting the network's Ethereum chain ID:
 
     <!-- TODO TODO Rename this to be consistent between chain ID & network ID???? -->
     ```golang

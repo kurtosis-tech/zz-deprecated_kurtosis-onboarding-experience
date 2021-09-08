@@ -45,7 +45,7 @@ func (test BasicEthereumTest) Setup(networkCtx *networks.NetworkContext) (networ
 func (test BasicEthereumTest) Run(uncastedNetwork networks.Network) error {
 	//TODO Replace with code for getting a Go Ethereum client
 
-	//TODO Replace with code for get the ETH network's chain ID
+	//TODO Replace with code for getting the ETH network's chain ID
 
 	//TODO Replace with code for create a new ETH account
 
@@ -59,4 +59,8 @@ func (test BasicEthereumTest) Run(uncastedNetwork networks.Network) error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-//TODO Add private helper functions here
+//TODO Replace with helper function to get container creation config
+
+//TODO Replace with helper function to get container run config
+k
+//TODO Replace with helper function to create a Go Ethereum client

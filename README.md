@@ -186,13 +186,12 @@ We now know that the Ethereum network responds to requests, so let's send a tran
        return stacktrace.NewError("Account creation command returned non-zero exit code with logs:\n%+v", string(*createAcctLogOutput))
     }
     logrus.Info("Account created successfully")
-    // logrus.Infof("Logs: %+v", string(*createAcctLogOutput))   
     ```
 
 1. Replace the `//TODO Make ETH transfer transaction` line with the following code to create an ETH transfer transaction:
 
     ```golang
-    sendTransferExitCode, sendTransferLogOutput, err = serviceCtx.ExecCommand([]string{
+    sendTransferExitCode, sendTransferLogOutput, err := serviceCtx.ExecCommand([]string{
         "/bin/sh", 
         "-c",
         "geth attach /tmp/geth.ipc --exec 'eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(0.05, \"ether\")})'",
@@ -204,22 +203,21 @@ We now know that the Ethereum network responds to requests, so let's send a tran
        return stacktrace.NewError("Send transfer command returned non-zero exit code with logs:\n%+v", string(*sendTransferLogOutput))
     }
     logrus.Info("ETH transfer transaction sent successfully")
-    // logrus.Infof("Logs: %+v", string(*sendTransferLogOutput))   
     ```
 
 1. Replace the `//TODO Get ETH account balance` line with the following code to verify that the account balance got updated:
 
     ```golang
-    exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
+    getBalanceExitCode, getBalanceLogOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
        fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.getBalance(eth.accounts[1])'"),
     })
     if err != nil {
-       return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
+       return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*getBalanceLogOutput))
     }
-    if exitCode != 0 {
-       return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
+    if getBalanceExitCode != 0 {
+       return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*getBalanceLogOutput))
     }
-    logrus.Infof("Logs: %+v", string(*logOutput))
+    logrus.Infof("Logs: %+v", string(*getBalanceLogOutput))
     ```
 
 1. Finally, verify that running `bash scripts/build-and-run.sh all` still shows `BasicEthereumTest` as passing

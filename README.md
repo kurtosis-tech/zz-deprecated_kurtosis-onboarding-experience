@@ -5,11 +5,26 @@ This repo is an empty Kurtosis testsuite. The instructions below will walk you t
 Step One: Set Up Prerequisites (5min)
 -------------------------------------
 1. Create a Kurtosis account on [the signup page](https://www.kurtosistech.com/sign-up) if you don't have one yet
-1. Verify that you have the Docker daemon installed and running on your local machine by running `docker image ls`
+1. Verify that you have the Docker daemon installed and running on your local machine by running:
+
+    ```
+    docker image ls
+    ```
+
     * If you don't have Docker installed, do so by following [the installation instructions](https://docs.docker.com/get-docker/)
     * If Docker is installed but not running, start it
-1. Clone this repository by running `git clone https://github.com/kurtosis-tech/kurtosis-onboarding-experience.git --branch master && cd kurtosis-onboarding-experience`
-1. Verify that the testsuite runs on your local machine with `bash scripts/build-and-run.sh all`, following the instructions for logging in with your Kurtosis account when prompted
+1. Clone this repository by running the following (**NOTE:** you can copy this snippet in Github by hovering over it and clicking the clipboard in the top-right corner):
+
+    ```
+    git clone https://github.com/kurtosis-tech/kurtosis-onboarding-experience.git --branch master && cd kurtosis-onboarding-experience
+    ```
+
+1. Verify that the testsuite runs on your local machine with:
+
+    ```
+    bash scripts/build-and-run.sh all
+    ```
+
 1. Ensure the output indicates that one test, `BasicEthereumTest`, ran and passed
 
 Step Two: Fill In BasicEthereumTest (15min)

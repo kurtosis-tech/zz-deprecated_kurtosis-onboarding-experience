@@ -16,6 +16,8 @@ const (
 
 	node0ServiceID services.ServiceID = "node-0"
 
+	weiToSend = uint64(50000000000000000) // 0.5 ETH
+
 	genesisStaticFileID    services.StaticFileID = "genesis.json"
 	genesisStaticFilePath                        = "/data/genesis.json"
 	passwordStaticFileID   services.StaticFileID = "password.txt"

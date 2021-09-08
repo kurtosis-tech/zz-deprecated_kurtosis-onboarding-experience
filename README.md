@@ -107,9 +107,6 @@ Step Two: Fill In BasicEthereumTest (15min)
 
     ```
     Added Ethereum node 'node-0' with IP 'X.X.X.X'
-    ```
-
-    ```
     Ethereum node 'node-0' is now available
     ```
 
@@ -208,19 +205,40 @@ We now know that the Ethereum network responds to requests, so let's send a tran
 1. Replace the `//TODO Get ETH account balance` line with the following code to verify that the account balance got updated:
 
     ```golang
-    getBalanceExitCode, getBalanceLogOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
-       fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.getBalance(eth.accounts[1])'"),
+    getBalanceExitCode, getBalanceLogOutput, err := serviceCtx.ExecCommand([]string{
+        "/bin/sh",
+        "-c",
+        "geth attach /tmp/geth.ipc --exec 'eth.getBalance(eth.accounts[1])'",
     })
     if err != nil {
-       return stacktrace.Propagate(err, "Get balance command returned an error")
+        return stacktrace.Propagate(err, "Get balance command returned an error")
     }
     if getBalanceExitCode != 0 {
-       return stacktrace.NewError("Get balance command returned non-zero exit code with logs:\n%+v", string(*getBalanceLogOutput))
+        return stacktrace.NewError("Get balance command returned non-zero exit code with logs:\n%+v", string(*getBalanceLogOutput))
     }
-    logrus.Infof("Logs: %+v", string(*getBalanceLogOutput))
+    accountBalanceWeiStr := strings.TrimSpace(string(*getBalanceLogOutput))
+    accountBalanceWei, err := strconv.ParseUint(accountBalanceWeiStr, 10, 64)
+    if err != nil {
+        return stacktrace.Propagate(err, "Couldn't parse account balance Wei string '%v' to number", accountBalanceWeiStr)
+    }
+    if accountBalanceWei != weiToSend {
+        return stacktrace.NewError("Actual account balance '%v' != expected account balance '%v'", accountBalanceWei, weiToSend)
+    }
+    logrus.Infof("Account balance was increased by %v Wei as expected", weiToSend)
     ```
 
-1. Finally, verify that running `bash scripts/build-and-run.sh all` still shows `BasicEthereumTest` as passing
+1. Verify that running the following still shows `BasicEthereumTest` as passing:
+
+    ```
+    bash scripts/build-and-run.sh all
+    ```
+1. Ensure you see the following log lines:
+
+    ```
+    Account created successfully
+    ETH transfer transaction sent successfully
+    Account balance was increased by 50000000000000000 Wei as expected
+    ```
 
 Implement an Advanced Test which test and Ethereum Private Network with Multiple Nodes
 --------------------------------------------------------------------------------------

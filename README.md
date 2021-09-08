@@ -81,7 +81,17 @@ Step Two: Fill In BasicEthereumTest (15min)
 
     ```golang
     adminInfoRpcCall  := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
-    if err := networkCtx.WaitForEndpointAvailability(serviceCtx.GetServiceID(), kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, ethereumNodeRpcPort, "", adminInfoRpcCall, nodeAvailabilityCheckInitialDelaySeconds, nodeAvailabilityCheckNumRetries, nodeAvailabilityCheckRetryWaitMilliseconds, ""); err != nil {
+    if err := networkCtx.WaitForEndpointAvailability(
+        serviceCtx.GetServiceID(),
+        kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST,
+        ethereumNodeRpcPort,
+        "",
+        adminInfoRpcCall,
+        nodeAvailabilityCheckInitialDelaySeconds,
+        nodeAvailabilityCheckNumRetries,
+        nodeAvailabilityCheckRetryWaitMilliseconds,
+        "",
+    ); err != nil {
         return "", stacktrace.Propagate(err, "An error occurred waiting for Ethereum node '%v' to become available", serviceCtx.GetServiceID())
     }
     logrus.Infof("Ethereum node '%v' is now available", serviceCtx.GetServiceID())
@@ -155,7 +165,7 @@ Now that our test is creating an Ethereum network every time it runs, let's writ
 1. Ensure that you see the following logline in the output indicating that the test logic ran:
 
     ```
-    Network ID: .....
+    Network ID: 1337
     ```
 
 ### Extend our test logic to send a transaction to the Ethereum testnet (5min)
@@ -164,31 +174,37 @@ We now know that the Ethereum network responds to requests, so let's send a tran
 1. Replace the `//TODO Create new ETH account` line in the test's `Run` method with the following code that uses the Ethereum IPC commands in [the official documentation](https://geth.ethereum.org/docs/getting-started/dev-mode) to create an ETH account using the Ethereum IPC API:
 
     ```golang
-    exitCode, logOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
-      fmt.Sprintf("printf \"passphrase\\npassphrase\\n\" | geth attach /tmp/geth.ipc --exec 'personal.newAccount()'"),
+    createAcctExitCode, createAcctLogOutput, err := serviceCtx.ExecCommand([]string{
+        "/bin/sh", 
+        "-c",
+        "printf \"passphrase\\npassphrase\\n\" | geth attach /tmp/geth.ipc --exec 'personal.newAccount()'",
     })
     if err != nil {
-       return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
+       return stacktrace.Propagate(err, "Account creation command returned an error")
     }
-    if exitCode != 0 {
-       return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
+    if createAcctExitCode != 0 {
+       return stacktrace.NewError("Account creation command returned non-zero exit code with logs:\n%+v", string(*createAcctLogOutput))
     }
-    logrus.Infof("Logs: %+v", string(*logOutput))   
+    logrus.Info("Account created successfully")
+    // logrus.Infof("Logs: %+v", string(*createAcctLogOutput))   
     ```
 
 1. Replace the `//TODO Make ETH transfer transaction` line with the following code to create an ETH transfer transaction:
 
     ```golang
-    exitCode, logOutput, err = serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
-       fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(0.05, \"ether\")})'"),
+    sendTransferExitCode, sendTransferLogOutput, err = serviceCtx.ExecCommand([]string{
+        "/bin/sh", 
+        "-c",
+        "geth attach /tmp/geth.ipc --exec 'eth.sendTransaction({from:eth.coinbase, to:eth.accounts[1], value: web3.toWei(0.05, \"ether\")})'",
     })
     if err != nil {
-       return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*logOutput))
+       return stacktrace.Propagate(err, "Send transfer command returned an error")
     }
-    if exitCode != 0 {
-       return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
+    if sendTransferExitCode != 0 {
+       return stacktrace.NewError("Send transfer command returned non-zero exit code with logs:\n%+v", string(*sendTransferLogOutput))
     }
-    logrus.Infof("Logs: %+v", string(*logOutput))   
+    logrus.Info("ETH transfer transaction sent successfully")
+    // logrus.Infof("Logs: %+v", string(*sendTransferLogOutput))   
     ```
 
 1. Replace the `//TODO Get ETH account balance` line with the following code to verify that the account balance got updated:

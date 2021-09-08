@@ -9,7 +9,7 @@ type MyTestsuite struct {}
 
 func (suite MyTestsuite) GetTests() map[string]testsuite.Test {
 	tests := map[string]testsuite.Test{
-		"myTest": &my_test.MyTest{},
+		"MyTest": &my_test.MyTest{},
 	}
 	return tests
 }

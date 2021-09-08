@@ -1,113 +1,135 @@
 Ethereum On-Boarding Testsuite
 ==============================
 
-## Implement a Single Node Ethereum Test Network
-
-1. Create an account on [https://www.kurtosistech.com/sign-up](https://www.kurtosistech.com/sign-up) if you don't have one yet.
+Implement A Single-Node Ethereum Test Network
+---------------------------------------------
+### Set Up Prerequisites
+1. Create a Kurtosis account on [the signup page](https://www.kurtosistech.com/sign-up) if you don't have one yet
 1. Verify that the Docker daemon is running on your local machine using `docker container ls`
-1. Clone this repository by running `git clone https://github.com/kurtosis-tech/kurtosis-onboarding-experience.git --branch master`
-1. Run the empty Ethereum single node test `my_test` to verify that everything works on your local machine.
+1. Clone this testsuite repository by running `git clone https://github.com/kurtosis-tech/kurtosis-onboarding-experience.git --branch master`
+1. Run the testsuite to verify that everything works on your local machine:
     1. Run `bash scripts/build-and-run.sh all`
-    1. Verify that the output of the build-and-run.sh script indicates that one test ran (my_test) and that it passed.
-1. Import the dependencies that are used in this example test suite.
-   1. Run `go get github.com/ethereum/go-ethereum/ethclient`
-1. Set up a single node Ethereum testnet in Kurtosis
-    1. In your preferred IDE, open the Ethereum single node test `my_test` at `testsuite/testsuite_impl/my_test/my_test.go`
-    1. Set the container configuration for the Ethereum container in your testnet.
-        1. Add the following container configuration helper function to the bottom of the test file.
-       ```
-        func getContainerCreationConfig() *services.ContainerCreationConfig {
-         containerCreationConfig := services.NewContainerCreationConfigBuilder(
+    1. Verify that the output indicates that one test, `MyTest`, ran and passed
+
+### Set up a one-node Ethereum testnet inside Kurtosis
+Here we'll modify `MyTest`, which currently doesn't do anything, to instantiate an Ethereum network of one node:
+
+1. In your preferred IDE, open `MyTest` inside file `testsuite/testsuite_impl/my_test/my_test_.go`
+1. At the bottom of the file under the `Private helper functions` header, add the following helper function for creating an Ethereum node container (**NOTE:** you can copy this entire code snippet by hovering over the block and clicking the clipboard icon in the top-right corner):
+
+    ```golang
+    func getContainerCreationConfig() *services.ContainerCreationConfig {
+        containerCreationConfig := services.NewContainerCreationConfigBuilder(
             "ethereum/client-go",
-         ).WithUsedPorts(
+        ).WithUsedPorts(
             map[string]bool{fmt.Sprintf("%v/tcp", 8545): true},
-         ).Build()
-         return containerCreationConfig
-        }
-       ```
-    1. Set the runtime configuration for the Ethereum container in your testnet.
-        1. Add the following runtime configuration helper function to the bottom of the test file.
-       ```
-       func getRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-          runConfigFunc := func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
-             entrypointCommand := fmt.Sprintf("geth --dev -http --http.api admin,eth,net,rpc --http.addr %v --http.corsdomain '*' --nat extip:%v",
+        ).Build()
+        return containerCreationConfig
+    }
+    ```
+
+1. In the same section, add the following helper function for running an Ethereum node container:
+
+    ```golang
+    func getRunConfigFunc() func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
+        runConfigFunc := func(ipAddr string, generatedFileFilepaths map[string]string, staticFileFilepaths map[services.StaticFileID]string) (*services.ContainerRunConfig, error) {
+            entrypointCommand := fmt.Sprintf(
+                "geth --dev -http --http.api admin,eth,net,rpc --http.addr %v --http.corsdomain '*' --nat extip:%v",
                 ipAddr,
-                ipAddr)
-             entrypointArgs := []string{
+                ipAddr,
+            )
+            entrypointArgs := []string{
                 "/bin/sh",
                 "-c",
                 entrypointCommand,
-             }
-             result := services.NewContainerRunConfigBuilder().WithEntrypointOverride(entrypointArgs).Build()
-             return result, nil
-          }
-          return runConfigFunc
-       }
-          ```      
-    1. Add an Ethereum node with your configurations to the `Setup()` method using the Kurtosis "network context" object.
-        1. Add the following code to the body of the `Setup()` method.
-            ```
-            containerCreationConfig := getContainerCreationConfig()
-            runConfigFunc := getRunConfigFunc()
-          
-            serviceCtx, hostPortBindings, err := networkCtx.AddService("my-eth-client", containerCreationConfig, runConfigFunc)
-            if err != nil {
-                return nil, stacktrace.Propagate(err, "An error occurred adding the Ethereum Go Client service")
             }
-            ```
-    1. Add an availability check to the `Setup()` method to make sure your Ethereum node is fully functional before your test starts.
-        1. Write logic to check for the availability of your Ethereum node
-            1. Add the following code to the bottom of your `Setup()` method in order to use Kurtosis function `networkCtx.WaitForEndpointAvailability()`
-               ```
-               adminInfoRpcCall  := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
-               if err := networkCtx.WaitForEndpointAvailability("my-eth-client", kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, 8545, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
-                    return "", stacktrace.Propagate(err, "An error occurred waiting for service with ID '%v' to start", "bootnode")
-               }
-            
-               logrus.Infof("Added Ethereum Go Client service with IP: %v andhost port bindings: %+v", serviceCtx.GetIPAddress(), hostPortBindings)
-               ```
-        1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that one test ran (myTest) and that it passed
-1. Write test logic in the `Run()` method to verify basic functionality of the single node Ethereum network.
-    1. Write test logic to get and verify the Chain ID of the test chain
-        1. Create an Eth Client private helper function `getEthClient` at the bottom of the test file, so it can be used later.
-        ```
-        func getEthClient(ipAddress string) (*ethclient.Client, error) {
-            rpcPort := 8545
-            url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
-            client, err := ethclient.Dial(url)
-            if err != nil {
-                return nil, stacktrace.Propagate(err, "An error occurred getting the Golang Ethereum client")
-            }
-            return client, nil
+            result := services.NewContainerRunConfigBuilder().WithEntrypointOverride(entrypointArgs).Build()
+            return result, nil
         }
-        ```
-        1. Create an Eth Client using the Kurtosis network context in the `Run()` method
-        ```
-        // Necessary because Go doesn't have generics
-        castedNetwork := uncastedNetwork.(*networks.NetworkContext)
-           
-        serviceCtx, err := castedNetwork.GetServiceContext("my-eth-client")
+        return runConfigFunc
+    }
+    ```
+
+1. In the test's `Setup` method, replace the `//TODO Replace with code for starting an Ethereum single node in dev mode` with the following code so that the test instantiates an Ethereum node as part of its setup:
+
+    ```golang
+    containerCreationConfig := getContainerCreationConfig()
+    runConfigFunc := getRunConfigFunc()
+
+    serviceCtx, hostPortBindings, err := networkCtx.AddService("my-eth-client", containerCreationConfig, runConfigFunc)
+    if err != nil {
+        return nil, stacktrace.Propagate(err, "An error occurred adding the Ethereum Go Client service")
+    }
+    ```
+
+1. In the same `Setup` method, replace `//TODO Replace with code for checking if the Ethereum network is available` with the following code to ensure that the test setup doesn't complete until the Ethereum node is available:
+
+    ```golang
+    adminInfoRpcCall  := `{"jsonrpc":"2.0","method": "admin_nodeInfo","params":[],"id":67}`
+    if err := networkCtx.WaitForEndpointAvailability("my-eth-client", kurtosis_core_rpc_api_bindings.WaitForEndpointAvailabilityArgs_POST, 8545, "", adminInfoRpcCall, 1, 30, 1, ""); err != nil {
+        return "", stacktrace.Propagate(err, "An error occurred waiting for service with ID '%v' to start", "bootnode")
+    }
+
+    logrus.Infof("Added Ethereum Go Client service with IP: %v andhost port bindings: %+v", serviceCtx.GetIPAddress(), hostPortBindings)
+    ```
+
+1. Run `bash scripts/build-and-run.sh all` and verify that `MyTest` is still passing
+1. If you'd like, you can run `docker container ls -a` and ensure that the test started an Ethereum container
+
+### Write test logic to get the Ethereum chain ID from the network
+Now that our test is creating an Ethereum network every time, let's write some logic to interact with it it:
+
+1. Add another helper function under the `Private helper functions` section to get a Go Ethereum client:
+
+    ```golang
+    func getEthClient(ipAddress string) (*ethclient.Client, error) {
+        rpcPort := 8545
+        url := fmt.Sprintf("http://%v:%v", ipAddress, rpcPort)
+        client, err := ethclient.Dial(url)
         if err != nil {
-           return stacktrace.Propagate(err, "An error occurred getting the Ethereum Go Client service context")
+            return nil, stacktrace.Propagate(err, "An error occurred getting the Golang Ethereum client")
         }
-        logrus.Infof("Got service context for Ethereum Go Client service '%v'", serviceCtx.GetServiceID())
-           
-        gethClient, err := getEthClient(serviceCtx.GetIPAddress())
-        if err != nil {
-           return stacktrace.Propagate(err, "Failed to get a gethClient from first node.")
-        }
-        defer gethClient.Close()
-        ```
-        1. Use the Eth Client to get and print the Network ID.
-        ```
-        networkId, err := gethClient.NetworkID(context.Background())
-        if err != nil {
-           return stacktrace.Propagate(err, "Failed to get network ID")
-        }
-        logrus.Infof("Chain ID: %v", networkId)
-        ```   
-        1. Verify that running `bash scripts/build-and-run.sh all` generates output indicating that one test ran (myTest) and that it passed
-1. Send a transaction on the blockchain running in your single-node Ethereum testnet.
+        return client, nil
+    }
+    ```
+
+1. Replace the `//TODO Replace with code for getting a Go Ethereum client` line in the test's `Run` method with the following code to get a Go client for interacting with the Ethereum node:
+
+    ```golang
+    // Necessary because Go doesn't have generics
+    castedNetwork := uncastedNetwork.(*networks.NetworkContext)
+       
+    serviceCtx, err := castedNetwork.GetServiceContext("my-eth-client")
+    if err != nil {
+       return stacktrace.Propagate(err, "An error occurred getting the Ethereum node's service context")
+    }
+    logrus.Infof("Got service context for Ethereum node '%v'", serviceCtx.GetServiceID())
+       
+    gethClient, err := getEthClient(serviceCtx.GetIPAddress())
+    if err != nil {
+       return stacktrace.Propagate(err, "Failed to get a Go Ethereum client for the Ethereum node")
+    }
+    defer gethClient.Close()
+    ```
+
+<!-- TODO TODO Rename this to be consistent between chain ID & network ID???? -->
+1. Replace the `//TODO Replace with code for get the ETH network's chain ID` line with the following code for getting the network's Ethereum chain ID:
+
+    ```golang
+    networkId, err := gethClient.NetworkID(context.Background())
+    if err != nil {
+        return stacktrace.Propagate(err, "Failed to get network ID")
+    }
+    logrus.Infof("Chain ID: %v", networkId)
+    ```   
+
+1. Verify that `MyTest` passes when running `bash scripts/build-and-run.sh all`, and that it prints out the Ethereum chain ID
+
+### Improve our test logic to send a transaction to the Ethereum testnet
+We now know that the Ethereum network responds to requests, so let's send a transaction to it:
+
+1. Replace the `//TODO Replace with code for create a new ETH account` 
+
     1. Use the `ExecCommand()` on the Kurtosis service context to execute commands from the [official Geth documentation](https://geth.ethereum.org/docs/getting-started/dev-mode).
     ```
     exitCode, logOutput, err := serviceCtx.ExecCommand([]string{"/bin/sh", "-c",
@@ -143,8 +165,8 @@ Ethereum On-Boarding Testsuite
     ```
     1. Verify that running `bash scripts/build-and-run.sh all` shows one passing test (my_test) that contains the business logic for an Ethereum single node network
 
-## Implement an Advanced Test which test and Ethereum Private Network with Multiple Nodes
-
+Implement an Advanced Test which test and Ethereum Private Network with Multiple Nodes
+--------------------------------------------------------------------------------------
 1. Create a private Ethereum test network in Kurtosis with multiple nodes, that uses **Clique consensus** as proof of authority and that is previously set in the **genesis block**, with a **signer account**.
     1. Setup a bootnode first
         1. Edit the `Configure()` method of the test `my_test.go`

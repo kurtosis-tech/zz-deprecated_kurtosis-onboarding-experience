@@ -240,6 +240,8 @@ We now know that the Ethereum network responds to requests, so let's send a tran
     Account balance was increased by 50000000000000000 Wei as expected
     ```
 
+And that's it! You now have a Kurtosis test that spins up an Ethereum network, sends a transaction, and verifies the transaction got completed.
+
 Implement an Advanced Test which test and Ethereum Private Network with Multiple Nodes
 --------------------------------------------------------------------------------------
 1. Create a private Ethereum test network in Kurtosis with multiple nodes, that uses **Clique consensus** as proof of authority and that is previously set in the **genesis block**, with a **signer account**.

@@ -212,10 +212,10 @@ We now know that the Ethereum network responds to requests, so let's send a tran
        fmt.Sprintf("geth attach /tmp/geth.ipc --exec 'eth.getBalance(eth.accounts[1])'"),
     })
     if err != nil {
-       return stacktrace.NewError("Executing command returned an error with logs: %+v", string(*getBalanceLogOutput))
+       return stacktrace.Propagate(err, "Get balance command returned an error")
     }
     if getBalanceExitCode != 0 {
-       return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*getBalanceLogOutput))
+       return stacktrace.NewError("Get balance command returned non-zero exit code with logs:\n%+v", string(*getBalanceLogOutput))
     }
     logrus.Infof("Logs: %+v", string(*getBalanceLogOutput))
     ```

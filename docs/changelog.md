@@ -1,4 +1,6 @@
 # TBD
+
+# 0.2.0
 ### Features
 * Created the Kurtosis project boilerplate which includes: CI configuration, build and run script and release script
 * Added testsuite execution configuration with a custom configurator `my_testsuite_configurator` and a custom testsuite `my_testsuite`

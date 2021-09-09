@@ -1,4 +1,4 @@
-package my_test
+package basic_ethereum_test
 
 import (
 	"github.com/kurtosis-tech/kurtosis-client/golang/lib/networks"
@@ -7,6 +7,17 @@ import (
 )
 
 const (
+	ethereumNodeImage = "ethereum/client-go"
+	ethereumNodeRpcPort = 8545
+
+	nodeAvailabilityCheckInitialDelaySeconds = 0
+	nodeAvailabilityCheckNumRetries = 30
+	nodeAvailabilityCheckRetryWaitMilliseconds = 1000
+
+	node0ServiceID services.ServiceID = "node-0"
+
+	weiToSend = uint64(50000000000000000) // 0.5 ETH
+
 	genesisStaticFileID    services.StaticFileID = "genesis.json"
 	genesisStaticFilePath                        = "/data/genesis.json"
 	passwordStaticFileID   services.StaticFileID = "password.txt"
@@ -15,7 +26,7 @@ const (
 	signerKeystoreFilePath                       = "/data/UTC--2021-08-11T21-30-29.861585000Z--14f6136b48b74b147926c9f24323d16c1e54a026"
 )
 
-type MyTest struct{}
+type BasicEthereumTest struct{}
 
 type NodeInfoResponse struct {
 	Result NodeInfo `json:"result"`
@@ -29,28 +40,29 @@ type AddPeerResponse struct {
 	Result bool `json:"result"`
 }
 
-func (test MyTest) Configure(builder *testsuite.TestConfigurationBuilder) {
+func (test BasicEthereumTest) Configure(builder *testsuite.TestConfigurationBuilder) {
 	builder.WithSetupTimeoutSeconds(360).WithRunTimeoutSeconds(360)
 }
 
-func (test MyTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
+func (test BasicEthereumTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 
-	//TODO Replace with instructions for starting an Ethereum single node in dev mode
+	//TODO Start a single ETH node in dev mode
 
-	//TODO Replace with instructions for check service availability
+	//TODO Check if the Ethereum network is available
 
 	return networkCtx, nil
 }
 
-func (test MyTest) Run(uncastedNetwork networks.Network) error {
+func (test BasicEthereumTest) Run(uncastedNetwork networks.Network) error {
+	//TODO Get Go Ethereum client
 
-	//TODO Replace with instructions for get the ETH network's chain ID
+	//TODO Get ETH network's chain ID
 
-	//TODO Replace with instructions for create a new ETH account
+	//TODO Create new ETH account
 
-	//TODO Replace with instructions for execute an ETH transaction
+	//TODO Make ETH transfer transaction
 
-	//TODO Replace with instructions for get the account's balance
+	//TODO Get ETH account balance
 
 	return nil
 }
@@ -58,4 +70,6 @@ func (test MyTest) Run(uncastedNetwork networks.Network) error {
 // ====================================================================================================
 //                                       Private helper functions
 // ====================================================================================================
-//TODO Add the private helper functions
+//TODO Container creation & run config helper functions
+
+//TODO Create Go Ethereum client helper function

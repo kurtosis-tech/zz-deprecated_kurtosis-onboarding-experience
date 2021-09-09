@@ -30,6 +30,6 @@ WORKDIR /run
 COPY --from=builder /build/testsuite.bin .
 
 # Copy local static files inside the testsuite image
-COPY testsuite/data /data
+COPY testsuite/static_files /static_files
 
 CMD ./testsuite.bin

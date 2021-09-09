@@ -9,5 +9,8 @@
 * Simplified the basic test instructions and fixed some bugs
 * Renamed `MyTest` to `BasicEthereumTest`
 
+### Removals
+* Removed the advanced test for now
+
 # 0.1.0
 * Init commit

@@ -23,13 +23,12 @@ import (
 
 const (
 	lambdaID = "eth-lambda"
-	rpcPort                   = 8545
+	rpcPort  = 8545
 
 	execCommandSuccessExitCode = 0
 
 	maxNumCheckTransactionMinedRetries      = 10
 	timeBetweenCheckTransactionMinedRetries = 1 * time.Second
-
 )
 
 type MyAdvancedTest struct{}
@@ -47,12 +46,11 @@ type AddPeerResponse struct {
 }
 
 type EthereumKurtosisLambdaResult struct {
-	BootnodeServiceID          services.ServiceID      `json:"bootnode_service_id"`
-	NodeServiceIDs             []services.ServiceID    `json:"node_service_ids"`
-	StaticFileIDs              []services.StaticFileID `json:"static_file_ids"`
-	GenesisStaticFileID        services.StaticFileID   `json:"genesis_static_file_id"`
-	PasswordStaticFileID       services.StaticFileID   `json:"password_static_file_id"`
-	SignerKeystoreStaticFileID services.StaticFileID   `json:"signer_keystore_static_file_id"`
+	BootnodeServiceID     services.ServiceID   `json:"bootnode_service_id"`
+	NodeServiceIDs        []services.ServiceID `json:"node_service_ids"`
+	RpcPort               uint32               `json:"rpc_port"`
+	SignerKeystoreContent string               `json:"signer_keystore_content"`
+	SignerAccountPassword string               `json:"signer_account_password"`
 }
 
 func (test MyAdvancedTest) Configure(builder *testsuite.TestConfigurationBuilder) {
@@ -65,7 +63,7 @@ func (test MyAdvancedTest) Configure(builder *testsuite.TestConfigurationBuilder
 
 func (test MyAdvancedTest) Setup(networkCtx *networks.NetworkContext) (networks.Network, error) {
 
-	_, err := networkCtx.LoadLambda(lambdaID,"kurtosistech/ethereum-kurtosis-lambda","{}")
+	_, err := networkCtx.LoadLambda(lambdaID, "kurtosistech/ethereum-kurtosis-lambda", "{}")
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred loading the Ethereum Kurtosis Lambda in the Testuite")
 	}
@@ -102,7 +100,7 @@ func (test MyAdvancedTest) Run(uncastedNetwork networks.Network) error {
 	}
 	defer gethClient.Close()
 
-	key, err := getPrivateKey(serviceCtx, ethResult)
+	key, err := getPrivateKey(ethResult)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to get private key")
 	}
@@ -130,15 +128,16 @@ func (test MyAdvancedTest) Run(uncastedNetwork networks.Network) error {
 	}
 	fmt.Println("Pending name:", name)
 
+	gethCmd := "geth attach data/geth.ipc --exec eth.accounts"
 	listAccountsCmd := []string{
 		"/bin/sh",
 		"-c",
-		fmt.Sprintf("geth attach data/geth.ipc --exec eth.accounts"),
+		gethCmd,
 	}
 
 	exitCode, logOutput, err := serviceCtx.ExecCommand(listAccountsCmd)
 	if err != nil {
-		return stacktrace.Propagate(err, "Executing command returned an error with logs: %+v", string(*logOutput))
+		return stacktrace.Propagate(err, "Executing command '%v' returned an error", gethCmd)
 	}
 	if exitCode != execCommandSuccessExitCode {
 		return stacktrace.NewError("Executing command returned an failing exit code with logs: %+v", string(*logOutput))
@@ -159,42 +158,16 @@ func getClient(ipAddress string) (*ethclient.Client, error) {
 	return client, nil
 }
 
-func getPrivateKey(serviceCtx *services.ServiceContext, ethResult *EthereumKurtosisLambdaResult) (*keystore.Key, error) {
-	staticFileAbsFilepaths, err := serviceCtx.LoadStaticFiles(map[services.StaticFileID]bool{
-		ethResult.SignerKeystoreStaticFileID: true,
-		ethResult.PasswordStaticFileID: true,
-	})
+func getPrivateKey(ethResult *EthereumKurtosisLambdaResult) (*keystore.Key, error) {
+
+	signerKeystoreContentBytes, err := ioutil.ReadAll(strings.NewReader(ethResult.SignerKeystoreContent))
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred loading the static files corresponding to keys '%v' and '%v'", ethResult.SignerKeystoreStaticFileID, ethResult.PasswordStaticFileID)
-	}
-	signerKeystoreFilepath, found := staticFileAbsFilepaths[ethResult.SignerKeystoreStaticFileID]
-	if !found {
-		return nil, stacktrace.Propagate(err, "No filepath found for key '%v'; this is a bug in Kurtosis!", signerKeystoreFilepath)
+		return nil, stacktrace.Propagate(err, "An error occurred when trying to read signer keystore content")
 	}
 
-	signerKeystoreContent, err := ioutil.ReadFile(signerKeystoreFilepath)
+	key, err := keystore.DecryptKey(signerKeystoreContentBytes, ethResult.SignerAccountPassword)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error happens reading file '%v'", signerKeystoreFilepath)
-	}
-
-	json, err := ioutil.ReadAll(strings.NewReader(string(signerKeystoreContent)))
-	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred when trying to read content for filepath '%v'", signerKeystoreFilepath)
-	}
-
-	passwordFilepath, found := staticFileAbsFilepaths[ethResult.PasswordStaticFileID]
-	if !found {
-		return nil, stacktrace.Propagate(err, "No filepath found for key '%v'; this is a bug in Kurtosis!", passwordFilepath)
-	}
-
-	passwordContent, err := ioutil.ReadFile(passwordFilepath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error happens reading file '%v'", passwordFilepath)
-	}
-
-	key, err := keystore.DecryptKey(json, string(passwordContent))
-	if err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred when trying to decrypt the private key")
+		return nil, stacktrace.Propagate(err, "An error occurred when trying to decrypt the private key")
 	}
 	return key, nil
 }

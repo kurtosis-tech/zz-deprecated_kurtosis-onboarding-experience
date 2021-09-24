@@ -1,5 +1,9 @@
 # TBD
 
+# 0.3.0
+### Features
+* Revamp the onboarding once again to start the user in the sandbox and transition them to testing
+
 # 0.2.0
 ### Features
 * Created the Kurtosis project boilerplate which includes: CI configuration, build and run script and release script

@@ -1,4 +1,6 @@
 # TBD
+### Features
+* Start the user in the sandbox, to get them going even sooner
 
 # 0.2.0
 ### Features

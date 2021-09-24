@@ -2,7 +2,8 @@ Kurtosis Ethereum Testsuite Tutorial
 ====================================
 This repo is an empty Kurtosis testsuite. The instructions below will walk you through creating a Kurtosis test that spins up a private Ethereum network and runs test logic against it. By the end of this tutorial, you will have seen how Kurtosis testing works.
 
-Step One: Set Up Prerequisites (3 minutes)
+
+Step One: Set Up Prerequisites (2 minutes)
 ------------------------------------------
 Verify that you have the Docker daemon installed and running on your local machine by running (you can copy this code by hovering over it):
 
@@ -40,13 +41,12 @@ services = getServicesResult.value
 We haven't started any services yet, so the enclave will be empty. Note how we called `await` on `networkCtx.getServices()`. This is because every `networkCtx` call is asynchronous and returns a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise); `await`ing blocks until that value is available.
 
 
-
 Step Three: Start An Ethereum Network (5 minutes)
 -------------------------------------------------
 Now that we have an enclave, let's put something in it! Ethereum is one of the most popular blockchains in the world, so let's get a private Ethereum network running:
 
 ```javascript
-loadEthLambdaResult = await networkCtx.loadLambda("eth-lambda", "kurtosistech/ethereum-kurtosis-lambda:0.2.1", "{}")
+loadEthLambdaResult = await networkCtx.loadLambda("eth-lambda", "kurtosistech/ethereum-kurtosis-lambda:0.2.3", "{}")
 ethLambdaCtx = loadEthLambdaResult.value
 executeEthLambdaResult = await ethLambdaCtx.execute("{}")
 executeEthLambdaResultObj = JSON.parse(executeEthLambdaResult.value)

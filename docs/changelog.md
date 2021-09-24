@@ -1,4 +1,6 @@
 # TBD
+
+# 0.3.0
 ### Features
 * Revamp the onboarding once again to start the user in the sandbox and transition them to testing
 

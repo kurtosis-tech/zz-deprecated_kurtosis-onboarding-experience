@@ -1,6 +1,6 @@
 # TBD
 ### Features
-* Start the user in the sandbox, to get them going even sooner
+* Revamp the onboarding once again to start the user in the sandbox and transition them to testing
 
 # 0.2.0
 ### Features

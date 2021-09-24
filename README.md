@@ -1,6 +1,6 @@
 Kurtosis Ethereum Testsuite Tutorial
 ====================================
-This repo is an empty Kurtosis testsuite. The instructions below will walk you through creating a Kurtosis test that spins up a private Ethereum network and runs test logic against it. By the end of this tutorial, you will have seen how Kurtosis testing works.
+The instructions below will walk you through spinning up an Ethereum network in Kurtosis, interacting with it, and migrating the logic into the Kurtosis testing framework. By the end of this tutorial, you will have a rudimentary Ethereum testsuite in Typescript that you can begin to modify on your own.
 
 
 Step One: Set Up Prerequisites (2 minutes)
@@ -209,6 +209,8 @@ scripts/build-and-run.sh all
 ```
 
 You'll see our setup and verification logic running, and the tests passing!
+
+<!-- TODO Link to docs and further deepdives -->
 
 <!-- TODO explain extra flags to control testsuite execution -->
 <!-- TODO explain executing the testsuite in CI -->

@@ -5,7 +5,7 @@ The instructions below will walk you through spinning up an Ethereum network in 
 
 Step One: Set Up Prerequisites (2 minutes)
 ------------------------------------------
-Verify that you have the Docker daemon installed and running on your local machine by running (you can copy this code by hovering over it):
+Verify that you have the Docker daemon installed and running on your local machine by running (you can copy this code by hovering over it and clicking the clipboard in the top-right corner):
 
 ```
 docker image ls
@@ -14,17 +14,32 @@ docker image ls
 * If you don't have Docker installed, do so by following [the installation instructions](https://docs.docker.com/get-docker/)
 * If Docker is installed but not running, start it
 
+**NOTE:** [DockerHub restricts downloads from users who aren't logged in](https://www.docker.com/blog/what-you-need-to-know-about-upcoming-docker-hub-rate-limiting/) to 100 images downloaded per 6 hours, so if at any point in this tutorial you see the following error message:
+
+```
+Error response from daemon: toomanyrequests: You have reached your pull rate limit. You may increase the limit by authenticating and upgrading: https://www.docker.com/increase-rate-limit
+```
+
+you can fix it by creating a DockerHub account (if you don't have one already) and registering it with your local Docker engine like so:
+
+```
+docker login
+```
+
 Step Two: Start A Sandbox Enclave (3 minutes)
 ---------------------------------------------
 The Kurtosis engine provides you isolated environments called "enclaves" to run your services inside. Let's use the CLI to start a sandbox enclave:
 
-1. Download the Kurtosis CLI (this can also be copied by hovering):
+1. Download the latest version of the Kurtosis CLI (this can also be copied by hovering and clicking the clipboard):
     ```
+    brew update
     brew install kurtosis-tech/tap/kurtosis
     ```
 1. Start a sandbox enclave:
     ```
-    mkdir /tmp/my-enclave && cd /tmp/my-enclave && kurtosis sandbox
+    mkdir /tmp/my-enclave
+    cd /tmp/my-enclave
+    kurtosis sandbox
     ```
 
 The Kurtosis images that run the engine will take a few seconds to pull the first time, but once done you'll have a Javascript REPL with tab-complete attached to your enclave.

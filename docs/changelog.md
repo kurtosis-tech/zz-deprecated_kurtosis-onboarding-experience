@@ -1,5 +1,11 @@
 # TBD
 
+# 0.3.1
+### Fixes
+* Add note about hovering + clipboard for copying codeblocks
+* Add `brew update` before CLI installation
+* Prompt for `docker login` to prevent anonymous image pulls
+
 # 0.3.0
 ### Features
 * Revamp the onboarding once again to start the user in the sandbox and transition them to testing

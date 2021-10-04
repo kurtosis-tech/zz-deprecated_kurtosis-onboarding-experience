@@ -1,4 +1,6 @@
 # TBD
+
+# 0.3.1
 ### Fixes
 * Add note about hovering + clipboard for copying codeblocks
 * Add `brew update` before CLI installation

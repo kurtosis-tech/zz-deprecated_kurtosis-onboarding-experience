@@ -30,7 +30,7 @@ Step Two: Start A Sandbox Enclave (3 minutes)
 ---------------------------------------------
 The Kurtosis engine provides you isolated environments called "enclaves" to run your services inside. Let's use the CLI to start a sandbox enclave:
 
-1. Download the Kurtosis CLI (this can also be copied by hovering and clicking the clipboard):
+1. Download the latest version of the Kurtosis CLI (this can also be copied by hovering and clicking the clipboard):
     ```
     brew update
     brew install kurtosis-tech/tap/kurtosis

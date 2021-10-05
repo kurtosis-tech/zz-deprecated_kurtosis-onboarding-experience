@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Update Readme file in order to use the [Ethereum Kurtosis Lambda to v0.2.4](https://github.com/kurtosis-tech/ethereum-kurtosis-lambda/blob/develop/docs/changelog.md#024)
 
 # 0.3.1
 ### Fixes

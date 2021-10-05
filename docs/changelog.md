@@ -1,5 +1,9 @@
 # TBD
 
+# 0.3.2
+### Changes
+* Update Readme file in order to use the [Ethereum Kurtosis Lambda to v0.2.4](https://github.com/kurtosis-tech/ethereum-kurtosis-lambda/blob/develop/docs/changelog.md#024)
+
 # 0.3.1
 ### Fixes
 * Add note about hovering + clipboard for copying codeblocks

@@ -61,7 +61,7 @@ Step Three: Start An Ethereum Network (5 minutes)
 Now that we have an enclave, let's put something in it! Ethereum is one of the most popular blockchains in the world, so let's get a private Ethereum network running:
 
 ```javascript
-loadEthLambdaResult = await networkCtx.loadLambda("eth-lambda", "kurtosistech/ethereum-kurtosis-lambda:0.2.3", "{}")
+loadEthLambdaResult = await networkCtx.loadLambda("eth-lambda", "kurtosistech/ethereum-kurtosis-lambda:0.2.4", "{}")
 ethLambdaCtx = loadEthLambdaResult.value
 executeEthLambdaResult = await ethLambdaCtx.execute("{}")
 executeEthLambdaResultObj = JSON.parse(executeEthLambdaResult.value)

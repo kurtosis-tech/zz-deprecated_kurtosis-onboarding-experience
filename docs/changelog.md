@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Pointed the user to the official installation docs for installing the Kurtosis CLI
 
 # 0.3.2
 ### Changes

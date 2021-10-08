@@ -5,6 +5,7 @@ The instructions below will walk you through spinning up an Ethereum network in 
 
 Step One: Set Up Prerequisites (2 minutes)
 ------------------------------------------
+### Install Docker
 Verify that you have the Docker daemon installed and running on your local machine by running (you can copy this code by hovering over it and clicking the clipboard in the top-right corner):
 
 ```
@@ -26,16 +27,13 @@ you can fix it by creating a DockerHub account (if you don't have one already) a
 docker login
 ```
 
+### Install the Kurtosis CLI
+Follow the steps [on this installation page][installation] to install the CLI for your architecture & package manager.
+
 Step Two: Start A Sandbox Enclave (3 minutes)
 ---------------------------------------------
 The Kurtosis engine provides you isolated environments called "enclaves" to run your services inside. Let's use the CLI to start a sandbox enclave:
 
-1. Download the latest version of the Kurtosis CLI (this can also be copied by hovering and clicking the clipboard):
-    ```
-    brew update
-    brew install kurtosis-tech/tap/kurtosis
-    ```
-1. Start a sandbox enclave:
     ```
     mkdir /tmp/my-enclave
     cd /tmp/my-enclave
@@ -246,5 +244,6 @@ indicating that our test set up an Ethereum network and ran our block count veri
 <!-- TODO explain executing the testsuite in CI -->
 <!-- TODO explain Debug mode, host port bindings, and setting debug log level -->
 
+[installation]: https://docs.kurtosistech.com/installation.html
 [neverthrow]: https://www.npmjs.com/package/neverthrow
 [core-documentation]: https://docs.kurtosistech.com/kurtosis-client/lib-documentation

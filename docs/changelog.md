@@ -1,5 +1,13 @@
 # TBD
 
+# 0.3.3
+### Changes
+* Pointed the user to the official installation docs for installing the Kurtosis CLI
+* Updated onboarding docs for modules instead of Lambdas
+
+### Features
+* The README now shows the user `enclave ls`, `enclave inspect`, and `repl install`
+
 # 0.3.2
 ### Changes
 * Update Readme file in order to use the [Ethereum Kurtosis Lambda to v0.2.4](https://github.com/kurtosis-tech/ethereum-kurtosis-lambda/blob/develop/docs/changelog.md#024)

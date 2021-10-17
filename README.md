@@ -135,7 +135,7 @@ Copy the enclave ID, and slot it into `YOUR_ENCLAVE_ID_HERE` in the below comman
 kurtosis enclave inspect YOUR_ENCLAVE_ID_HERE
 ```
 
-Kurtosis will output everything it knows about your enclave, similar but not identical to the one below:
+Kurtosis will output everything it knows about your enclave, similar but not identical to the output below:
 
 ```
 ======================================== Interactive REPLs ========================================

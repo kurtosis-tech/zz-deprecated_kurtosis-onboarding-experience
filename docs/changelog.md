@@ -1,4 +1,6 @@
 # TBD
+
+# 0.3.3
 ### Changes
 * Pointed the user to the official installation docs for installing the Kurtosis CLI
 * Updated onboarding docs for modules instead of Lambdas

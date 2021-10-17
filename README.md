@@ -59,11 +59,11 @@ Step Three: Start An Ethereum Network (5 minutes)
 Now that we have an enclave, let's put something in it! Ethereum is one of the most popular blockchains in the world, so let's get a private Ethereum network running:
 
 ```javascript
-loadEthLambdaResult = await networkCtx.loadLambda("eth-lambda", "kurtosistech/ethereum-kurtosis-lambda:0.2.4", "{}")
-ethLambdaCtx = loadEthLambdaResult.value
-executeEthLambdaResult = await ethLambdaCtx.execute("{}")
-executeEthLambdaResultObj = JSON.parse(executeEthLambdaResult.value)
-console.log(executeEthLambdaResultObj)
+loadEthModuleResult = await networkCtx.loadModule("eth-module", "kurtosistech/ethereum-kurtosis-module", "{}")
+ethModuleCtx = loadEthModuleResult.value
+executeEthModuleResult = await ethModuleCtx.execute("{}")
+executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value)
+console.log(executeEthModuleResultObj)
 ```
 
 This will take approximately a minute to run. After the final `console.log` line executes, you'll see a result with information about the services running inside your enclave:
@@ -108,7 +108,7 @@ Set(3) { 'bootnode', 'ethereum-node-1', 'ethereum-node-2' }
 
 But what just happened?
 
-Starting networks is a very common task in Kurtosis, so we provide [a framework called "Lambdas"](https://docs.kurtosistech.com/lambdas.html) for making it dead simple. A Lambda is basically a function, packaged as a Docker image, that runs inside a Kurtosis enclave - sort of like Docker Compose on steroids. In the steps above, we called `networkCtx.loadLambda` to load [the Ethereum Lambda](https://github.com/kurtosis-tech/ethereum-kurtosis-lambda) into the enclave with Lambda ID `eth-lambda`, and `networkCtx.executeLambda` to run it. The Ethereum Lambda doesn't take any arguments at load or execute time (hence the `{}`), but other Lambdas do.
+Starting networks is a very common task in Kurtosis, so we provide [a framework called "modules"](https://docs.kurtosistech.com/modules.html) for making it dead simple. An executable module is basically a chunk of code that responds to an "execute" command, packaged as a Docker image, that runs inside a Kurtosis enclave - sort of like Docker Compose on steroids. In the steps above, we called `networkCtx.loadModule` to load [the Ethereum module](https://github.com/kurtosis-tech/ethereum-kurtosis-module) into the enclave with module ID `eth-module`, and `ethModuleCtx.execute` to run it. The Ethereum module doesn't take any parameters at load or execute time (hence the `{}`), but other modules do.
 
 Now that you have a pet Ethereum network, let's do something with it.
 
@@ -127,12 +127,12 @@ Even though the REPL is running in a Docker image so that you don't need Javascr
 Now let's get a connection to the node with service ID `bootnode` by getting a [JsonRpcProvider](https://docs.ethers.io/v5/api/providers/jsonrpc-provider/):
 
 ```javascript
-bootnodeServiceId = executeEthLambdaResultObj.bootnode_service_id
-bootnodeIp = executeEthLambdaResultObj.node_info[bootnodeServiceId].ip_addr_inside_network
+bootnodeServiceId = executeEthModuleResultObj.bootnode_service_id
+bootnodeIp = executeEthModuleResultObj.node_info[bootnodeServiceId].ip_addr_inside_network
 bootnodeRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodeIp}:8545`);
 ```
 
-Notice how we used the `executeEthLambdaResultObj` object containing details about the Ethereum network, which we got from executing the Lambda at the very beginning.
+Notice how we used the `executeEthModuleResultObj` object containing details about the Ethereum network, which we got from executing the module at the very beginning.
 
 Finally, let's verify that our Ethereum network is producing blocks:
 
@@ -185,17 +185,17 @@ First, inside the `BasicEthTest` class, replace the `// TODO Replace with Ethere
 
 ```typescript
 log.info("Setting up Ethereum network...")
-const loadEthLambdaResult: Result<LambdaContext, Error> = await networkCtx.loadLambda(ETH_LAMBDA_ID, ETH_LAMBDA_IMAGE, "{}");
-if (loadEthLambdaResult.isErr()) {
-    return err(loadEthLambdaResult.error);
+const loadEthModuleResult: Result<ModuleContext, Error> = await networkCtx.loadModule(ETH_MODULE_ID, ETH_MODULE_IMAGE, "{}");
+if (loadEthModuleResult.isErr()) {
+    return err(loadEthModuleResult.error);
 }
-const ethLambdaCtx: LambdaContext = loadEthLambdaResult.value;
+const ethModuleCtx: ModuleContext = loadEthModuleResult.value;
 
-const executeEthLambdaResult: Result<string, Error> = await ethLambdaCtx.execute("{}")
-if (executeEthLambdaResult.isErr()) {
-    return err(executeEthLambdaResult.error);
+const executeEthModuleResult: Result<string, Error> = await ethModuleCtx.execute("{}")
+if (executeEthModuleResult.isErr()) {
+    return err(executeEthModuleResult.error);
 }
-this.executeEthLambdaResultObj = JSON.parse(executeEthLambdaResult.value);
+this.executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value);
 log.info("Ethereum network set up successfully");
 ```
 
@@ -205,8 +205,8 @@ Second, replace the `// TODO Replace with block number check` line with this cod
 
 ```typescript
 log.info("Verifying block number is increasing...");
-const bootnodeServiceId: ServiceID = this.executeEthLambdaResultObj.bootnode_service_id;
-const bootnodeIp: string = this.executeEthLambdaResultObj.node_info[bootnodeServiceId].ip_addr_inside_network
+const bootnodeServiceId: ServiceID = this.executeEthModuleResultObj.bootnode_service_id;
+const bootnodeIp: string = this.executeEthModuleResultObj.node_info[bootnodeServiceId].ip_addr_inside_network
 const bootnodeRpcProvider: ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodeIp}:8545`);
 const blockNumber: number = await bootnodeRpcProvider.getBlockNumber();
 if (blockNumber === 0) {

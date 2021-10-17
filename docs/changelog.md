@@ -1,6 +1,10 @@
 # TBD
 ### Changes
 * Pointed the user to the official installation docs for installing the Kurtosis CLI
+* Updated onboarding docs for modules instead of Lambdas
+
+### Features
+* The README now shows the user `enclave ls`, `enclave inspect`, and `repl install`
 
 # 0.3.2
 ### Changes

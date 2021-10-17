@@ -34,11 +34,11 @@ Step Two: Start A Sandbox Enclave (3 minutes)
 ---------------------------------------------
 The Kurtosis engine provides you isolated environments called "enclaves" to run your services inside. Let's use the CLI to start a sandbox enclave:
 
-    ```
-    mkdir /tmp/my-enclave
-    cd /tmp/my-enclave
-    kurtosis sandbox
-    ```
+```
+mkdir /tmp/my-enclave
+cd /tmp/my-enclave
+kurtosis sandbox
+```
 
 The Kurtosis images that run the engine will take a few seconds to pull the first time, but once done you'll have a Javascript REPL with tab-complete attached to your enclave.
 
@@ -66,24 +66,24 @@ executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value)
 console.log(executeEthModuleResultObj)
 ```
 
-This will take approximately a minute to run. After the final `console.log` line executes, you'll see a result with information about the services running inside your enclave:
+This will take approximately a minute to run, with the majority of the time spent pulling the Ethereum images. After the final `console.log` line executes, you'll see a result with information about the services running inside your enclave:
 
 ```javascript
 {
   bootnode_service_id: 'bootnode',
   node_info: {
     bootnode: {
-      ip_addr_inside_network: '175.152.144.6',
+      ip_addr_inside_network: '14.93.192.7',
       exposed_ports_set: [Object],
       port_bindings_on_local_machine: [Object]
     },
     'ethereum-node-1': {
-      ip_addr_inside_network: '175.152.144.8',
+      ip_addr_inside_network: '14.93.192.9',
       exposed_ports_set: [Object],
       port_bindings_on_local_machine: [Object]
     },
     'ethereum-node-2': {
-      ip_addr_inside_network: '175.152.144.10',
+      ip_addr_inside_network: '14.93.192.11',
       exposed_ports_set: [Object],
       port_bindings_on_local_machine: [Object]
     }
@@ -114,15 +114,61 @@ Now that you have a pet Ethereum network, let's do something with it.
 
 Step Four: Talk To Ethereum (5 minutes)
 ---------------------------------------
-Talking to Ethereum in Javascript is easily accomplished with [the EthersJS library](https://docs.ethers.io/v5/), so let's load it. 
+Talking to Ethereum in Javascript is easily accomplished with [the EthersJS library](https://docs.ethers.io/v5/). Your Javascript REPL is running in a Docker image (so that you don't need Javascript installed locally), so we'll need to install EthersJS on that image.
 
-Even though the REPL is running in a Docker image so that you don't need Javascript installed locally, the directory in which you ran `kurtosis sandbox` (`/tmp/my-enclave`) is available to your REPL. To load Ethers:
+First, in a new terminal window, run the following to find the enclave our REPL is running inside:
 
-1. Unzip [this file](https://kurtosis-public-access.s3.us-east-1.amazonaws.com/onboarding-artifacts/ethers-js-5.4.7.zip) into `/tmp/my-enclave`
-1. Run:
-    ```javascript
-    const ethers = require("ethers")
-    ```
+```
+kurtosis enclave ls
+```
+
+You should see an output similar (but not identical) to the following:
+
+```
+EnclaveID
+KT2021-10-17T15.46.23.438
+```
+
+Copy the enclave ID, and slot it into `YOUR_ENCLAVE_ID_HERE` in the below command:
+
+```
+kurtosis enclave inspect YOUR_ENCLAVE_ID_HERE
+```
+
+Kurtosis will output everything it knows about your enclave, similar but not identical to the one below:
+
+```
+======================================== Interactive REPLs ========================================
+GUID
+1634503584
+
+========================================== User Services ==========================================
+GUID                         LocalPortBindings
+bootnode_1634503610          30303/udp -> 0.0.0.0:54291
+                             8545/tcp -> 0.0.0.0:52113
+                             8546/tcp -> 0.0.0.0:52111
+                             30303/tcp -> 0.0.0.0:52112
+ethereum-node-1_1634503612   30303/udp -> 0.0.0.0:59350
+                             8545/tcp -> 0.0.0.0:52115
+                             8546/tcp -> 0.0.0.0:52116
+                             30303/tcp -> 0.0.0.0:52114
+ethereum-node-2_1634503614   30303/udp -> 0.0.0.0:55007
+                             8545/tcp -> 0.0.0.0:52170
+                             8546/tcp -> 0.0.0.0:52171
+                             30303/tcp -> 0.0.0.0:52172
+```
+
+Copy the interactive REPL's GUID, and replace both `YOUR_REPL_GUID_HERE` and `YOUR_ENCLAVE_ID_HERE` in the below command with the appropriate values:
+
+```
+kurtosis repl install YOUR_ENCLAVE_ID_HERE YOUR_REPL_GUID_HERE ethers
+```
+
+When the command finishes, you can now use it in your CLI!
+
+```javascript
+const ethers = require("ethers")
+```
 
 Now let's get a connection to the node with service ID `bootnode` by getting a [JsonRpcProvider](https://docs.ethers.io/v5/api/providers/jsonrpc-provider/):
 

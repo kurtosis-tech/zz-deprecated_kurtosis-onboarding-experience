@@ -164,7 +164,7 @@ Copy the interactive REPL's GUID, and replace both `YOUR_REPL_GUID_HERE` and `YO
 kurtosis repl install YOUR_ENCLAVE_ID_HERE YOUR_REPL_GUID_HERE ethers
 ```
 
-When the command finishes, you can now use it in your CLI!
+When the command finishes, you can now use it in your CLI! (You can execute the next command in the interactive REPL that should be still open in the previous tab)
 
 ```javascript
 const ethers = require("ethers")

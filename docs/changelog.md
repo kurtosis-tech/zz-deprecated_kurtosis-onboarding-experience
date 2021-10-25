@@ -1,5 +1,9 @@
 # TBD
 
+# 0.3.4
+### Changes
+* Update readme's steps to clarify where should be executed the `require("ethers")` sentence
+
 # 0.3.3
 ### Changes
 * Pointed the user to the official installation docs for installing the Kurtosis CLI

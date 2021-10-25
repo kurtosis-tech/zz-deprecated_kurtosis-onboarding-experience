@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Update readme's steps to clarify where should be executed the `require("ethers")` sentence
 
 # 0.3.3
 ### Changes

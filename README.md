@@ -35,8 +35,6 @@ Step Two: Start A Sandbox Enclave (3 minutes)
 The Kurtosis engine provides you isolated environments called "enclaves" to run your services inside. Let's use the CLI to start a sandbox enclave:
 
 ```
-mkdir /tmp/my-enclave
-cd /tmp/my-enclave
 kurtosis sandbox
 ```
 

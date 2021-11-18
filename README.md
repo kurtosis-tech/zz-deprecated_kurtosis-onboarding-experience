@@ -1,6 +1,6 @@
 Kurtosis Ethereum Quickstart
 ============================
-The instructions below will walk you through spinning up an Ethereum network in a Kurtosis sandbox, interacting with it, and migrating the logic into the Kurtosis testing framework. By the end of this tutorial, you will have a rudimentary Ethereum testsuite in Typescript that you can begin to modify on your own.
+The instructions below will walk you through spinning up an Ethereum network in a Kurtosis sandbox, interacting with it, and migrating the logic into a test. By the end of this tutorial, you will have a rudimentary Ethereum test in Typescript that you can begin to modify on your own.
 
 
 Step One: Set Up Prerequisites (2 minutes)
@@ -28,7 +28,7 @@ docker login
 ```
 
 ### Install the Kurtosis CLI
-Follow the steps [on this installation page][installation] to install the CLI for your architecture & package manager.
+Follow the steps [on this installation page][installation] to install the CLI, or upgrade it to latest if it's already installed.
 
 Step Two: Start A Sandbox Enclave (3 minutes)
 ---------------------------------------------
@@ -40,16 +40,16 @@ kurtosis sandbox
 
 The Kurtosis images that run the engine will take a few seconds to pull the first time, but once done you'll have a Javascript REPL with tab-complete attached to your enclave.
 
-All interaction with a Kurtosis enclave is done via [a client library][core-documentation], whose entrypoint is the `NetworkContext` object - a representation of the network running inside the enclave. The `networkCtx` variable in your REPL is how you'll interact with your enclave.
+All interaction with a Kurtosis enclave is done via [a client library][core-documentation], whose entrypoint is the `EnclaveContext` object - a representation of the network running inside the enclave. The magically-populated `enclaveCtx` variable in your REPL is how you'll interact with your enclave.
 
 Let's check the contents of our enclave (this entire block can be copy-pasted as-is into the REPL):
 
 ```javascript
-getServicesResult = await networkCtx.getServices()
+getServicesResult = await enclaveCtx.getServices()
 services = getServicesResult.value
 ```
 
-We haven't started any services yet, so the enclave will be empty. Note how we called `await` on `networkCtx.getServices()`. This is because every `networkCtx` call is asynchronous and returns a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise); `await`ing blocks until that value is available.
+We haven't started any services yet, so the enclave will be empty. Note how we called `await` on `enclaveCtx.getServices()`. This is because every `enclaveCtx` call is asynchronous and returns a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise); `await`ing blocks until that value is available.
 
 
 Step Three: Start An Ethereum Network (5 minutes)
@@ -57,7 +57,7 @@ Step Three: Start An Ethereum Network (5 minutes)
 Now that we have an enclave, let's put something in it! Ethereum is one of the most popular blockchains in the world, so let's get a private Ethereum network running:
 
 ```javascript
-loadEthModuleResult = await networkCtx.loadModule("eth-module", "kurtosistech/ethereum-kurtosis-module", "{}")
+loadEthModuleResult = await enclaveCtx.loadModule("eth-module", "kurtosistech/ethereum-kurtosis-module", "{}")
 ethModuleCtx = loadEthModuleResult.value
 executeEthModuleResult = await ethModuleCtx.execute("{}")
 executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value)
@@ -94,7 +94,7 @@ This will take approximately a minute to run, with the majority of the time spen
 And if we query the enclave's services again...
 
 ```javascript
-getServicesResult = await networkCtx.getServices()
+getServicesResult = await enclaveCtx.getServices()
 services = getServicesResult.value
 ```
 
@@ -106,7 +106,7 @@ Set(3) { 'bootnode', 'ethereum-node-1', 'ethereum-node-2' }
 
 But what just happened?
 
-Starting networks is a very common task in Kurtosis, so we provide [a framework called "modules"](https://docs.kurtosistech.com/modules.html) for making it dead simple. An executable module is basically a chunk of code that responds to an "execute" command, packaged as a Docker image, that runs inside a Kurtosis enclave - sort of like Docker Compose on steroids. In the steps above, we called `networkCtx.loadModule` to load [the Ethereum module](https://github.com/kurtosis-tech/ethereum-kurtosis-module) into the enclave with module ID `eth-module`, and `ethModuleCtx.execute` to run it. The Ethereum module doesn't take any parameters at load or execute time (hence the `{}`), but other modules do.
+Starting networks is a very common task in Kurtosis, so we provide [a framework called "modules"](https://docs.kurtosistech.com/modules.html) for making it dead simple. An executable module is basically a chunk of code that responds to an "execute" command, packaged as a Docker image, that runs inside a Kurtosis enclave - sort of like Docker Compose on steroids. In the steps above, we called `enclaveCtx.loadModule` to load [the Ethereum module](https://github.com/kurtosis-tech/ethereum-kurtosis-module) into the enclave with module ID `eth-module`, and `ethModuleCtx.execute` to run it. The Ethereum module doesn't take any parameters at load or execute time (hence the `{}`), but other modules do.
 
 Now that you have a pet Ethereum network, let's do something with it.
 
@@ -156,7 +156,7 @@ ethereum-node-2_1634503614   30303/udp -> 0.0.0.0:55007
                              30303/tcp -> 0.0.0.0:52172
 ```
 
-Copy the interactive REPL's GUID, and replace both `YOUR_REPL_GUID_HERE` and `YOUR_ENCLAVE_ID_HERE` in the below command with the appropriate values:
+Copy the interactive REPL's GUID, and replace both `YOUR_ENCLAVE_ID_HERE` and `YOUR_REPL_GUID_HERE` in the below command with the appropriate values:
 
 ```
 kurtosis repl install YOUR_ENCLAVE_ID_HERE YOUR_REPL_GUID_HERE ethers
@@ -193,43 +193,52 @@ To exit out of the REPL you can enter any of:
 * Ctrl-C, twice
 * `.exit`
 
-and Kurtosis will tear down the enclave and everything inside.
+Your enclave will stay running until you command it to stop. Run the following to tell Kurtosis to tear down your enclave, replacing `YOUR_ENCLAVE_ID` with the ID of your running enclave:
 
+```
+kurtosis enclave rm -f YOUR_ENCLAVE_ID
+```
+
+
+
+
+<!--- TODOOOOO UNCOMMENT THIS WHEN WE CAN GET HOST PORT BINDINGS FROM SERVICES!!!!!! -->
+<!-- 
 Step Five: Get An Ethereum Testsuite (5 minutes)
 ---------------------------------------------
-Manually verifying against a sandbox network is nice, but it'd be great if we could take our logic and run it as part of CI. Kurtosis has a testing framework that allows us to do exactly that. 
+Manually verifying against a sandbox network is nice, but it'd be great if we could take our logic and run it as part of CI. Fortunately, Kurtosis allows us to do exactly that. 
 
-Normally, we'd bootstrap a testsuite from [the Testsuite Starter Pack](https://github.com/kurtosis-tech/kurtosis-testsuite-starter-pack) and use [the same Kurtosis engine documentation][core-documentation] with [the testing framework documentation](https://docs.kurtosistech.com/kurtosis-testsuite-api-lib/lib-documentation) to customize it for our Ethereum usecase.
+Normally, you'd have a project that you'd add the Kurtosis tests to. For the purposes of this onboarding though, we've created a sample Typescript project with testing ready to go. Go ahead and clone it from [here](https://github.com/kurtosis-tech/onboarding-ethereum-testsuite), and we'll take a look around.
 
-For the purposes of this onboarding though, we've gone ahead and created an Ethereum testsuite that's ready to go. Go ahead and clone it from [here](https://github.com/kurtosis-tech/onboarding-ethereum-testsuite) now, and we'll take a look around.
+The first thing to notice is the `test/basic_eth_test.ts` file. This contains a Mocha test that connects to the Kurtosis engine, spins up an enclave for the test, does nothing (right now), and stops it when it's done. 
 
-The first thing to notice is the `testsuite/Dockerfile`. Testsuites in Kurtosis are simply packages of tests bundled in Docker images, which the testing framework will instantiate to run tests.
-
-The second thing to notice is the `testsuite/testsuite_impl/eth_testsuite.ts` file. This is where tests are defined, and this testsuite already has a single test - `basicEthTest`.
-
-Now open `testsuite/testsuite_impl/basic_eth_test/basic_eth_test.ts`. You'll see that a test is really just a class with three function: `configure`, `setup`, and `run`. Like most testing frameworks, `setup` is where we place the prep work that executes before the `run` method while `run` is where we make our test assertions. The `configure` method is where timeouts for both `setup` and `run` are configured, among other things.
-
-The last thing to notice is how a `NetworkContext` is passed in as an argument to `setup`. Every Kurtosis test runs inside of its own enclave to prevent cross-test interference, and you can use [the exact same `NetworkContext` APIs][core-documentation] inside the testing framework that you used in the sandbox.
+The second thing to notice is the `kurtosis-engine-api-lib` dev dependency in the `package.json`. This is the client library for connecting to the Kurtosis engine for creating, manipulating, stopping, & destroying enclaves.
 
 Now let's see the testing framework in action. From the root of the repo, run:
 
 ```
-scripts/build-and-run.sh all    # The 'all' tells Kurtosis to build your testsuite into a Docker image AND run it
+scripts/build.sh all
 ```
 
-You'll see a prompt to create a Kurtosis account, which we use for gating advanced features (don't worry, we won't sign you up for any email lists!). Follow the instructions, and click the device verification link once you have your account.
-
 The testsuite will run, and you'll see that our `basicEthTest` passed!
+
+If we go ahead and run the enclave-listing command again:
+
+```
+kurtosis enclave ls
+```
+
+you'll notice a new stopped `basic-ethereum-test_XXXXXXXXXXXXX` enclave. Our current test is set to stop enclaves after it's done with them so debugging information stays around, though the test could easily be switched to destroy the enclave instead.
 
 Step Six: Test Ethereum (5 minutes)
 -----------------------------------
 We now have a test running in the testing framework, but our test doesn't currently do anything. Let's fix that.
 
-First, inside the `BasicEthTest` class, replace the `// TODO Replace with Ethereum network setup` line in the `setup` method with the following code:
+First, inside the test, replace the `// TODO Replace with Ethereum network setup` line with the following code:
 
 ```typescript
 log.info("Setting up Ethereum network...")
-const loadEthModuleResult: Result<ModuleContext, Error> = await networkCtx.loadModule(ETH_MODULE_ID, ETH_MODULE_IMAGE, "{}");
+const loadEthModuleResult: Result<ModuleContext, Error> = await enclaveCtx.loadModule(ETH_MODULE_ID, ETH_MODULE_IMAGE, "{}");
 if (loadEthModuleResult.isErr()) {
     return err(loadEthModuleResult.error);
 }
@@ -280,6 +289,7 @@ Verified that block number is increasing
 ```
 
 indicating that our test set up an Ethereum network and ran our block count verification logic against it!
+-->
 
 <!-- explain static files, and show how they could be used for ETH genesis -->
 <!-- TODO Link to docs and further deepdives -->
@@ -290,4 +300,4 @@ indicating that our test set up an Ethereum network and ran our block count veri
 
 [installation]: https://docs.kurtosistech.com/installation.html
 [neverthrow]: https://www.npmjs.com/package/neverthrow
-[core-documentation]: https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+[core-documentation]: https://docs.kurtosistech.com/kurtosis-core/lib-documentation

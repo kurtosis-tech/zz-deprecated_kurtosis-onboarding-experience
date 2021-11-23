@@ -123,8 +123,8 @@ kurtosis enclave ls
 You should see an output similar (but not identical) to the following:
 
 ```
-EnclaveID
-KT2021-10-17T15.46.23.438
+EnclaveID                   Status     
+KT2021-10-17T15.46.23.438   EnclaveContainersStatus_RUNNING
 ```
 
 Copy the enclave ID, and slot it into `YOUR_ENCLAVE_ID_HERE` in the below command:
@@ -154,6 +154,10 @@ ethereum-node-2_1634503614   30303/udp -> 0.0.0.0:55007
                              8545/tcp -> 0.0.0.0:52170
                              8546/tcp -> 0.0.0.0:52171
                              30303/tcp -> 0.0.0.0:52172
+                             
+========================================= Kurtosis Modules =========================================
+GUID                    LocalPortBindings
+eth-module_16345024     1111/tcp -> 127.0.0.1:50210
 ```
 
 Copy the interactive REPL's GUID, and replace both `YOUR_ENCLAVE_ID_HERE` and `YOUR_REPL_GUID_HERE` in the below command with the appropriate values:

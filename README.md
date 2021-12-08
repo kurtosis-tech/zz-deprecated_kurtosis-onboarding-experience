@@ -132,8 +132,8 @@ kurtosis enclave ls
 You should see an output similar (but not identical) to the following:
 
 ```
-EnclaveID
-KT2021-10-17T15.46.23.438
+EnclaveID                   Status     
+KT2021-10-17T15.46.23.438   EnclaveContainersStatus_RUNNING
 ```
 
 Copy the enclave ID, and slot it into `YOUR_ENCLAVE_ID_HERE` in the below command:

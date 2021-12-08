@@ -71,19 +71,28 @@ This will take approximately a minute to run, with the majority of the time spen
   bootnode_service_id: 'bootnode',
   node_info: {
     bootnode: {
-      ip_addr_inside_network: '14.93.192.7',
-      exposed_ports_set: [Object],
-      port_bindings_on_local_machine: [Object]
+      ip_addr_inside_network: '154.18.224.5',
+      ip_addr_on_host_machine: '127.0.0.1',
+      rpc_port_id: 'rpc',
+      ws_port_id: 'ws',
+      tcp_discovery_port_id: 'tcp-discovery',
+      udp_discovery_port_id: 'udp-discovery'
     },
     'ethereum-node-1': {
-      ip_addr_inside_network: '14.93.192.9',
-      exposed_ports_set: [Object],
-      port_bindings_on_local_machine: [Object]
+      ip_addr_inside_network: '154.18.224.7',
+      ip_addr_on_host_machine: '127.0.0.1',
+      rpc_port_id: 'rpc',
+      ws_port_id: 'ws',
+      tcp_discovery_port_id: 'tcp-discovery',
+      udp_discovery_port_id: 'udp-discovery'
     },
     'ethereum-node-2': {
-      ip_addr_inside_network: '14.93.192.11',
-      exposed_ports_set: [Object],
-      port_bindings_on_local_machine: [Object]
+      ip_addr_inside_network: '154.18.224.9',
+      ip_addr_on_host_machine: '127.0.0.1',
+      rpc_port_id: 'rpc',
+      ws_port_id: 'ws',
+      tcp_discovery_port_id: 'tcp-discovery',
+      udp_discovery_port_id: 'udp-discovery'
     }
   },
   signer_keystore_content: '{"address":"14f6136b48b74b147926c9f24323d16c1e54a026","crypto":{"cipher":"aes-128-ctr","ciphertext":"39fb1d86c1082c0103ece1c5f394321f127bf1b65e6c471edcfb181058a3053a","cipherparams":{"iv":"c366d1eed33e8693fec7a85fad65d19f"},"kdf":"scrypt","kdfparams":{"dklen":32,"n":262144,"p":1,"r":8,"salt":"f210bc3b55117197f62a7ab8d85f2172342085f1daafa31034016163b8bc7db6"},"mac":"2ff8aa24d9b73ccfdb99cfd15fcdbcc8f640aaa7861e6813d53efaf550725fac"},"id":"6c5ac271-d24a-4971-b365-49490cc4befc","version":3}',
@@ -136,24 +145,33 @@ kurtosis enclave inspect YOUR_ENCLAVE_ID_HERE
 Kurtosis will output everything it knows about your enclave, similar but not identical to the output below:
 
 ```
+Enclave ID:                KT2021-12-08T13.22.31.404
+Enclave Status:            EnclaveContainersStatus_RUNNING
+API Container Status:      EnclaveAPIContainerStatus_RUNNING
+API Container Host Port:   127.0.0.1:50828
+
 ======================================== Interactive REPLs ========================================
 GUID
-1634503584
+1638991359
 
 ========================================== User Services ==========================================
 GUID                         LocalPortBindings
-bootnode_1634503610          30303/udp -> 0.0.0.0:54291
-                             8545/tcp -> 0.0.0.0:52113
-                             8546/tcp -> 0.0.0.0:52111
-                             30303/tcp -> 0.0.0.0:52112
-ethereum-node-1_1634503612   30303/udp -> 0.0.0.0:59350
-                             8545/tcp -> 0.0.0.0:52115
-                             8546/tcp -> 0.0.0.0:52116
-                             30303/tcp -> 0.0.0.0:52114
-ethereum-node-2_1634503614   30303/udp -> 0.0.0.0:55007
-                             8545/tcp -> 0.0.0.0:52170
-                             8546/tcp -> 0.0.0.0:52171
-                             30303/tcp -> 0.0.0.0:52172
+bootnode_1638991384          8545/tcp -> 127.0.0.1:50845
+                             8546/tcp -> 127.0.0.1:50846
+                             30303/tcp -> 127.0.0.1:50847
+                             30303/udp -> 127.0.0.1:60255
+ethereum-node-1_1638991388   8545/tcp -> 127.0.0.1:50853
+                             8546/tcp -> 127.0.0.1:50851
+                             30303/tcp -> 127.0.0.1:50852
+                             30303/udp -> 127.0.0.1:57127
+ethereum-node-2_1638991392   8545/tcp -> 127.0.0.1:50948
+                             8546/tcp -> 127.0.0.1:50949
+                             30303/tcp -> 127.0.0.1:50947
+                             30303/udp -> 127.0.0.1:49317
+
+========================================= Kurtosis Modules =========================================
+GUID                    LocalPortBindings
+eth-module_1638991377   1111/tcp -> 127.0.0.1:50841
 ```
 
 Copy the interactive REPL's GUID, and replace both `YOUR_ENCLAVE_ID_HERE` and `YOUR_REPL_GUID_HERE` in the below command with the appropriate values:
@@ -168,12 +186,22 @@ When the command finishes, you can now use it in your CLI! (You can execute the 
 const ethers = require("ethers")
 ```
 
-Now let's get a connection to the node with service ID `bootnode` by getting a [JsonRpcProvider](https://docs.ethers.io/v5/api/providers/jsonrpc-provider/):
+Now let's get a connection to the node with service ID `bootnode` by getting a [JsonRpcProvider](https://docs.ethers.io/v5/api/providers/jsonrpc-provider/). First we'll grab the `ServiceContext` (Kurtosis' representation of the node), use it to get the ports that the bootnode is listening on, and then construct an Ethers client connected to the node:
 
 ```javascript
+// Grab the bootnode's service context
 bootnodeServiceId = executeEthModuleResultObj.bootnode_service_id
-bootnodeIp = executeEthModuleResultObj.node_info[bootnodeServiceId].ip_addr_inside_network
-bootnodeRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodeIp}:8545`);
+bootnodeNodeObj = executeEthModuleResultObj.node_info[bootnodeServiceId]
+getBootnodeServiceCtxResult = await enclaveCtx.getServiceContext(bootnodeServiceId)
+bootnodeServiceCtx = getBootnodeServiceCtxResult.value
+
+// Get the IP & port of the bootnode, inside the enclave
+bootnodeRpcPortId = bootnodeNodeObj.rpc_port_id
+bootnodeRpcPort = bootnodeServiceCtx.getPrivatePorts().get(bootnodeRpcPortId)
+bootnodePrivateIp = bootnodeServiceCtx.getPrivateIPAddress()
+
+// Instantiate the Ethers client
+bootnodeRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodePrivateIp}:${bootnodeRpcPort.number}`)
 ```
 
 Notice how we used the `executeEthModuleResultObj` object containing details about the Ethereum network, which we got from executing the module at the very beginning.
@@ -199,11 +227,6 @@ Your enclave will stay running until you command it to stop. Run the following t
 kurtosis enclave rm -f YOUR_ENCLAVE_ID
 ```
 
-
-
-
-<!--- TODOOOOO UNCOMMENT THIS WHEN WE CAN GET HOST PORT BINDINGS FROM SERVICES!!!!!! -->
-<!-- 
 Step Five: Get An Ethereum Testsuite (5 minutes)
 ---------------------------------------------
 Manually verifying against a sandbox network is nice, but it'd be great if we could take our logic and run it as part of CI. Fortunately, Kurtosis allows us to do exactly that. 
@@ -217,10 +240,10 @@ The second thing to notice is the `kurtosis-engine-api-lib` dev dependency in th
 Now let's see the testing framework in action. From the root of the repo, run:
 
 ```
-scripts/build.sh all
+scripts/build.sh
 ```
 
-The testsuite will run, and you'll see that our `basicEthTest` passed!
+The testsuite will run, and you'll see that our basic test passed!
 
 If we go ahead and run the enclave-listing command again:
 
@@ -240,56 +263,56 @@ First, inside the test, replace the `// TODO Replace with Ethereum network setup
 log.info("Setting up Ethereum network...")
 const loadEthModuleResult: Result<ModuleContext, Error> = await enclaveCtx.loadModule(ETH_MODULE_ID, ETH_MODULE_IMAGE, "{}");
 if (loadEthModuleResult.isErr()) {
-    return err(loadEthModuleResult.error);
+    throw loadEthModuleResult.error;
 }
 const ethModuleCtx: ModuleContext = loadEthModuleResult.value;
 
 const executeEthModuleResult: Result<string, Error> = await ethModuleCtx.execute("{}")
 if (executeEthModuleResult.isErr()) {
-    return err(executeEthModuleResult.error);
+    throw executeEthModuleResult.error;
 }
-this.executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value);
+const executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value);
 log.info("Ethereum network set up successfully");
 ```
 
-This is the same code we already executed in the REPL, cleaned up for Typescript. The only new bits to pay attention to are the error-checking: all `NetworkContext` methods, as well as the `Test.setup` and `Test.run` methods, return [a Result object][neverthrow] (much like in Rust). If `setup` or `run` return a non-`Ok` result, the test will be marked as failed. This allows for easy, consistent error-checking: simply propagate the error upwards.
+This is the same code we already executed in the REPL, cleaned up for Typescript. The only new bits to pay attention to are the error-checking: all `EnclaveContext` and `ModuleContext`  methods return [a Result object][neverthrow] (much like in Rust). If the is a non-`Ok` result, we'll throw the result which will cause Mocha to mark the test as failed.
 
 Second, replace the `// TODO Replace with block number check` line with this code:
 
 ```typescript
 log.info("Verifying block number is increasing...");
-const bootnodeServiceId: ServiceID = this.executeEthModuleResultObj.bootnode_service_id;
-const bootnodeIp: string = this.executeEthModuleResultObj.node_info[bootnodeServiceId].ip_addr_inside_network
-const bootnodeRpcProvider: ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodeIp}:8545`);
+// Grab the bootnode's service context
+const bootnodeServiceId = executeEthModuleResultObj.bootnode_service_id
+const bootnodeNodeObj = executeEthModuleResultObj.node_info[bootnodeServiceId]
+const getBootnodeServiceCtxResult = await enclaveCtx.getServiceContext(bootnodeServiceId)
+if (getBootnodeServiceCtxResult.isErr()) {
+    throw getBootnodeServiceCtxResult.error;
+}
+const bootnodeServiceCtx = getBootnodeServiceCtxResult.value;
+
+// Get the IP & port of the bootnode, *outside* the enclave
+const bootnodeRpcPortId = bootnodeNodeObj.rpc_port_id
+const bootnodeRpcPort = bootnodeServiceCtx.getPublicPorts().get(bootnodeRpcPortId)
+const bootnodePublicIp = bootnodeServiceCtx.getMaybePublicIPAddress()
+
+// Instantiate the Ethers client
+const bootnodeRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodePublicIp}:${bootnodeRpcPort.number}`)
 const blockNumber: number = await bootnodeRpcProvider.getBlockNumber();
 if (blockNumber === 0) {
-    return err(new Error(""))
+    throw new Error("We expected the Ethereum cluster to be producing blocks, but the block number is still 0");
 }
 log.info("Verified that block number is increasing");
 ```
 
+This code is nearly the same as what we ran in the sandbox, but with one crucial difference: we're using the _public_ IP address and port now because our test is running outside the enclave. Code that runs inside an enclave (e.g. the sandbox REPL or a Kurtosis module) should use the private IP & ports, while code that runs outside should use the public IP & ports.
+
 Finally, build and run the testsuite again:
 
 ```
-scripts/build-and-run.sh all
+scripts/build.sh
 ```
 
-You'll see logs like:
-
-```
-Setting up Ethereum network...
-Ethereum network set up successfully
-```
-
-and
-
-```
-Verifying block number is increasing...
-Verified that block number is increasing
-```
-
-indicating that our test set up an Ethereum network and ran our block count verification logic against it!
--->
+The test will pass, indicating that our test set up an Ethereum network and ran our block count verification logic against it!
 
 <!-- explain static files, and show how they could be used for ETH genesis -->
 <!-- TODO Link to docs and further deepdives -->

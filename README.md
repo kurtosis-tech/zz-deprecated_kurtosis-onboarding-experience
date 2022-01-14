@@ -295,6 +295,10 @@ const bootnodeRpcPortId = bootnodeNodeObj.rpc_port_id
 const bootnodeRpcPort = bootnodeServiceCtx.getPublicPorts().get(bootnodeRpcPortId)
 const bootnodePublicIp = bootnodeServiceCtx.getMaybePublicIPAddress()
 
+if (bootnodeRpcPort === undefined) {
+    throw new Error("We expected having set a RPC port in the bootnode, but it is undefined");
+}
+
 // Instantiate the Ethers client
 const bootnodeRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodePublicIp}:${bootnodeRpcPort.number}`)
 const blockNumber: number = await bootnodeRpcProvider.getBlockNumber();

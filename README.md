@@ -293,7 +293,11 @@ const bootnodeServiceCtx = getBootnodeServiceCtxResult.value;
 // Get the IP & port of the bootnode, *outside* the enclave
 const bootnodeRpcPortId = bootnodeNodeObj.rpc_port_id
 const bootnodeRpcPort = bootnodeServiceCtx.getPublicPorts().get(bootnodeRpcPortId)
+if (bootnodeRpcPort === undefined) {
+    throw new Error("We expected the boot node to have a public RPC port, but it was undefined");
+}
 const bootnodePublicIp = bootnodeServiceCtx.getMaybePublicIPAddress()
+
 
 // Instantiate the Ethers client
 const bootnodeRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodePublicIp}:${bootnodeRpcPort.number}`)

@@ -1,6 +1,6 @@
 Kurtosis Ethereum Quickstart
 ============================
-The instructions below will walk you through spinning up an Ethereum network in a Kurtosis sandbox, interacting with it, and migrating the logic into the Kurtosis testing framework. By the end of this tutorial, you will have a rudimentary Ethereum testsuite in Typescript that you can begin to modify on your own.
+The instructions below will walk you through spinning up an Ethereum network in a Kurtosis sandbox, interacting with it, and migrating the logic into a test. By the end of this tutorial, you will have a rudimentary Ethereum test in Typescript that you can begin to modify on your own.
 
 
 Step One: Set Up Prerequisites (2 minutes)
@@ -28,9 +28,9 @@ docker login
 ```
 
 ### Install the Kurtosis CLI
-Follow the steps [on this installation page][installation] to install the CLI for your architecture & package manager.
+Follow the steps [on this installation page][installation] to install the CLI, or upgrade it to latest if it's already installed.
 
-Step Two: Start An Enclave And Run One User Service Inside  (xx minutes)
+Step Two: Start An Enclave And Run One User Service Inside  (3 minutes)
 ----------------------------------------------------------------------
 The Kurtosis engine provides you isolated environments called "enclaves" to run your services inside. Let's use the CLI to create a new enclave:
 
@@ -133,19 +133,28 @@ This will take approximately a minute to run, with the majority of the time spen
   bootnode_service_id: 'bootnode',
   node_info: {
     bootnode: {
-      ip_addr_inside_network: '14.93.192.7',
-      exposed_ports_set: [Object],
-      port_bindings_on_local_machine: [Object]
+      ip_addr_inside_network: '154.18.224.5',
+      ip_addr_on_host_machine: '127.0.0.1',
+      rpc_port_id: 'rpc',
+      ws_port_id: 'ws',
+      tcp_discovery_port_id: 'tcp-discovery',
+      udp_discovery_port_id: 'udp-discovery'
     },
     'ethereum-node-1': {
-      ip_addr_inside_network: '14.93.192.9',
-      exposed_ports_set: [Object],
-      port_bindings_on_local_machine: [Object]
+      ip_addr_inside_network: '154.18.224.7',
+      ip_addr_on_host_machine: '127.0.0.1',
+      rpc_port_id: 'rpc',
+      ws_port_id: 'ws',
+      tcp_discovery_port_id: 'tcp-discovery',
+      udp_discovery_port_id: 'udp-discovery'
     },
     'ethereum-node-2': {
-      ip_addr_inside_network: '14.93.192.11',
-      exposed_ports_set: [Object],
-      port_bindings_on_local_machine: [Object]
+      ip_addr_inside_network: '154.18.224.9',
+      ip_addr_on_host_machine: '127.0.0.1',
+      rpc_port_id: 'rpc',
+      ws_port_id: 'ws',
+      tcp_discovery_port_id: 'tcp-discovery',
+      udp_discovery_port_id: 'udp-discovery'
     }
   },
   signer_keystore_content: '{"address":"14f6136b48b74b147926c9f24323d16c1e54a026","crypto":{"cipher":"aes-128-ctr","ciphertext":"39fb1d86c1082c0103ece1c5f394321f127bf1b65e6c471edcfb181058a3053a","cipherparams":{"iv":"c366d1eed33e8693fec7a85fad65d19f"},"kdf":"scrypt","kdfparams":{"dklen":32,"n":262144,"p":1,"r":8,"salt":"f210bc3b55117197f62a7ab8d85f2172342085f1daafa31034016163b8bc7db6"},"mac":"2ff8aa24d9b73ccfdb99cfd15fcdbcc8f640aaa7861e6813d53efaf550725fac"},"id":"6c5ac271-d24a-4971-b365-49490cc4befc","version":3}',
@@ -258,49 +267,49 @@ and Kurtosis will tear down all enclaves and everything inside.
 
 Step Five: Get An Ethereum Testsuite (5 minutes)
 ---------------------------------------------
-Manually verifying against an enclave is nice, but it'd be great if we could take our logic and run it as part of CI. Kurtosis has a testing framework that allows us to do exactly that. 
+Manually verifying against an enclave is nice, but it'd be great if we could take our logic and run it as part of CI. Kurtosis has a testing framework that allows us to do exactly that.
 
-Normally, we'd bootstrap a testsuite from [the Testsuite Starter Pack](https://github.com/kurtosis-tech/kurtosis-testsuite-starter-pack) and use [the same Kurtosis engine documentation][core-documentation] with [the testing framework documentation](https://docs.kurtosistech.com/kurtosis-testsuite-api-lib/lib-documentation) to customize it for our Ethereum usecase.
+Normally, you'd have a project that you'd add the Kurtosis tests to. For the purposes of this onboarding though, we've created a sample Typescript project with testing ready to go. Go ahead and clone it from [here](https://github.com/kurtosis-tech/onboarding-ethereum-testsuite), and we'll take a look around.
 
-For the purposes of this onboarding though, we've gone ahead and created an Ethereum testsuite that's ready to go. Go ahead and clone it from [here](https://github.com/kurtosis-tech/onboarding-ethereum-testsuite) now, and we'll take a look around.
+The first thing to notice is the `test/basic_eth_test.ts` file. This contains a Mocha test that connects to the Kurtosis engine, spins up an enclave for the test, does nothing (right now), and stops it when it's done. 
 
-The first thing to notice is the `testsuite/Dockerfile`. Testsuites in Kurtosis are simply packages of tests bundled in Docker images, which the testing framework will instantiate to run tests.
-
-The second thing to notice is the `testsuite/testsuite_impl/eth_testsuite.ts` file. This is where tests are defined, and this testsuite already has a single test - `basicEthTest`.
-
-Now open `testsuite/testsuite_impl/basic_eth_test/basic_eth_test.ts`. You'll see that a test is really just a class with three function: `configure`, `setup`, and `run`. Like most testing frameworks, `setup` is where we place the prep work that executes before the `run` method while `run` is where we make our test assertions. The `configure` method is where timeouts for both `setup` and `run` are configured, among other things.
-
-The last thing to notice is how a `NetworkContext` is passed in as an argument to `setup`. Every Kurtosis test runs inside of its own enclave to prevent cross-test interference, and you can use [the `NetworkContext` APIs][core-documentation] inside the testing framework.
+The second thing to notice is the `kurtosis-engine-api-lib` dev dependency in the `package.json`. This is the client library for connecting to the Kurtosis engine for creating, manipulating, stopping, & destroying enclaves.
 
 Now let's see the testing framework in action. From the root of the repo, run:
 
 ```
-scripts/build-and-run.sh all    # The 'all' tells Kurtosis to build your testsuite into a Docker image AND run it
+scripts/build.sh
 ```
 
-You'll see a prompt to create a Kurtosis account, which we use for gating advanced features (don't worry, we won't sign you up for any email lists!). Follow the instructions, and click the device verification link once you have your account.
+The testsuite will run, and you'll see that our basic test passed!
 
-The testsuite will run, and you'll see that our `basicEthTest` passed!
+If we go ahead and run the enclave-listing command again:
+
+```
+kurtosis enclave ls
+```
+
+you'll notice a new stopped `basic-ethereum-test_XXXXXXXXXXXXX` enclave. Our current test is set to stop enclaves after it's done with them so debugging information stays around, though the test could easily be switched to destroy the enclave instead.
 
 Step Six: Test Ethereum (5 minutes)
 -----------------------------------
 We now have a test running in the testing framework, but our test doesn't currently do anything. Let's fix that.
 
-First, inside the `BasicEthTest` class, replace the `// TODO Replace with Ethereum network setup` line in the `setup` method with the following code:
+First, inside the test, replace the `// TODO Replace with Ethereum network setup` line with the following code:
 
 ```typescript
 log.info("Setting up Ethereum network...")
-const loadEthModuleResult: Result<ModuleContext, Error> = await networkCtx.loadModule(ETH_MODULE_ID, ETH_MODULE_IMAGE, "{}");
+const loadEthModuleResult: Result<ModuleContext, Error> = await enclaveCtx.loadModule(ETH_MODULE_ID, ETH_MODULE_IMAGE, "{}");
 if (loadEthModuleResult.isErr()) {
-    return err(loadEthModuleResult.error);
+    throw loadEthModuleResult.error;
 }
 const ethModuleCtx: ModuleContext = loadEthModuleResult.value;
 
 const executeEthModuleResult: Result<string, Error> = await ethModuleCtx.execute("{}")
 if (executeEthModuleResult.isErr()) {
-    return err(executeEthModuleResult.error);
+    throw executeEthModuleResult.error;
 }
-this.executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value);
+const executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value);
 log.info("Ethereum network set up successfully");
 ```
 
@@ -310,12 +319,29 @@ Second, replace the `// TODO Replace with block number check` line with this cod
 
 ```typescript
 log.info("Verifying block number is increasing...");
-const bootnodeServiceId: ServiceID = this.executeEthModuleResultObj.bootnode_service_id;
-const bootnodeIp: string = this.executeEthModuleResultObj.node_info[bootnodeServiceId].ip_addr_inside_network
-const bootnodeRpcProvider: ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodeIp}:8545`);
+// Grab the bootnode's service context
+const bootnodeServiceId = executeEthModuleResultObj.bootnode_service_id
+const bootnodeNodeObj = executeEthModuleResultObj.node_info[bootnodeServiceId]
+const getBootnodeServiceCtxResult = await enclaveCtx.getServiceContext(bootnodeServiceId)
+if (getBootnodeServiceCtxResult.isErr()) {
+    throw getBootnodeServiceCtxResult.error;
+}
+const bootnodeServiceCtx = getBootnodeServiceCtxResult.value;
+
+// Get the IP & port of the bootnode, *outside* the enclave
+const bootnodeRpcPortId = bootnodeNodeObj.rpc_port_id
+const bootnodeRpcPort = bootnodeServiceCtx.getPublicPorts().get(bootnodeRpcPortId)
+if (bootnodeRpcPort === undefined) {
+    throw new Error("We expected the boot node to have a public RPC port, but it was undefined");
+}
+const bootnodePublicIp = bootnodeServiceCtx.getMaybePublicIPAddress()
+
+
+// Instantiate the Ethers client
+const bootnodeRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodePublicIp}:${bootnodeRpcPort.number}`)
 const blockNumber: number = await bootnodeRpcProvider.getBlockNumber();
 if (blockNumber === 0) {
-    return err(new Error(""))
+    throw new Error("We expected the Ethereum cluster to be producing blocks, but the block number is still 0");
 }
 log.info("Verified that block number is increasing");
 ```
@@ -323,24 +349,10 @@ log.info("Verified that block number is increasing");
 Finally, build and run the testsuite again:
 
 ```
-scripts/build-and-run.sh all
+scripts/build.sh
 ```
 
-You'll see logs like:
-
-```
-Setting up Ethereum network...
-Ethereum network set up successfully
-```
-
-and
-
-```
-Verifying block number is increasing...
-Verified that block number is increasing
-```
-
-indicating that our test set up an Ethereum network and ran our block count verification logic against it!
+The test will pass, indicating that our test set up an Ethereum network and ran our block count verification logic against it!
 
 <!-- explain static files, and show how they could be used for ETH genesis -->
 <!-- TODO Link to docs and further deepdives -->
@@ -351,4 +363,4 @@ indicating that our test set up an Ethereum network and ran our block count veri
 
 [installation]: https://docs.kurtosistech.com/installation.html
 [neverthrow]: https://www.npmjs.com/package/neverthrow
-[core-documentation]: https://docs.kurtosistech.com/kurtosis-client/lib-documentation
+[core-documentation]: https://docs.kurtosistech.com/kurtosis-core/lib-documentation

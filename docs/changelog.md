@@ -1,4 +1,6 @@
 # TBD
+### Changes
+* Replaced instructions related to using Sandbox and Repl containers with Kurtosis CLI commands and cURL requests because we thought it is more user-friendly
 
 # 0.3.3
 ### Changes

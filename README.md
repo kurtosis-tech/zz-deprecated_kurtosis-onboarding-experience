@@ -30,40 +30,100 @@ docker login
 ### Install the Kurtosis CLI
 Follow the steps [on this installation page][installation] to install the CLI for your architecture & package manager.
 
-Step Two: Start A Sandbox Enclave (3 minutes)
----------------------------------------------
-The Kurtosis engine provides you isolated environments called "enclaves" to run your services inside. Let's use the CLI to start a sandbox enclave:
+Step Two: Start An Enclave And Run One User Service Inside  (xx minutes)
+----------------------------------------------------------------------
+The Kurtosis engine provides you isolated environments called "enclaves" to run your services inside. Let's use the CLI to create a new enclave:
 
 ```
 mkdir /tmp/my-enclave
 cd /tmp/my-enclave
-kurtosis sandbox
+kurtosis enclave new --id demo
 ```
 
-The Kurtosis images that run the engine will take a few seconds to pull the first time, but once done you'll have a Javascript REPL with tab-complete attached to your enclave.
+The Kurtosis images that run the engine will take a few seconds to pull the first time, but once done you'll have a new enclave ready to be used.
 
-All interaction with a Kurtosis enclave is done via [a client library][core-documentation], whose entrypoint is the `NetworkContext` object - a representation of the network running inside the enclave. The `networkCtx` variable in your REPL is how you'll interact with your enclave.
-
-Let's check the contents of our enclave (this entire block can be copy-pasted as-is into the REPL):
-
-```javascript
-getServicesResult = await networkCtx.getServices()
-services = getServicesResult.value
+If we want to see if the enclave has been created we can do this:
+```
+kurtosis enclave ls
 ```
 
-We haven't started any services yet, so the enclave will be empty. Note how we called `await` on `networkCtx.getServices()`. This is because every `networkCtx` call is asynchronous and returns a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise); `await`ing blocks until that value is available.
+You should see the enclave list, listing the new one:
+
+```
+EnclaveID   Status
+demo        EnclaveContainersStatus_RUNNING
+```
+
+It means that you were able to create your first enclave, well done! Also, we can check the contents of our enclave.
+
+```
+kurtosis enclave inspect demo
+```
+
+You should see something like this:
+
+```
+Enclave ID:                           kt2022-04-04t17.17.03.135
+Data Directory:                       /Users/username/Library/Application Support/kurtosis/engine-data/enclaves/kt2022-04-04t17.17.03.135
+Enclave Status:                       EnclaveContainersStatus_RUNNING
+API Container Status:                 EnclaveAPIContainerStatus_RUNNING
+API Container Host GRPC Port:         127.0.0.1:55783
+API Container Host GRPC Proxy Port:   127.0.0.1:55784
+
+========================================= Kurtosis Modules =========================================
+GUID   LocalPortBindings
+
+========================================== User Services ==========================================
+GUID   ID   LocalPortBindings
+```
+
+If you pain attention to the screen you will se that we have the enclave but no user service or Kurtosis module has been created yet
+
+Now that we have an enclave, let's put something in it!, go ahead and execute the following command to run a `webserver` (based on the httpd Docker image) inside the enclave:
+
+```
+kurtosis service add demo webserver httpd --ports http=80
+```
+
+And the screen will show us something like this:
+
+```
+Service ID: webserver
+Ports Bindings:
+   http:   80/tcp -> 127.0.0.1:63825
+```
+
+Now, you can go to your browser and check that the webserver is up and running through the local url provided in the http port binding (e.g.: 127.0.0.1:63825)
+
+Let's inspect the enclave again:
+
+```
+kurtosis enclave inspect demo
+```
+
+Now, you should see the webserver listed in the user service slot, like this example:
+
+```
+========================================== User Services ==========================================
+GUID                   ID          LocalPortBindings
+webserver-1649186256   webserver   80/tcp -> 127.0.0.1:63825
+```
+
+Finally, if you don't want to continue working with the service you can ger rid of it doing the following:
+
+```
+kurtosis service rm demo webserver
+```
 
 
 Step Three: Start An Ethereum Network (5 minutes)
 -------------------------------------------------
-Now that we have an enclave, let's put something in it! Ethereum is one of the most popular blockchains in the world, so let's get a private Ethereum network running:
+Now that we know how to create and enclave and add a service, we can go one step ahead and start enjoying one of the most important features Kurtosis have, the Kurtosis modules.
 
-```javascript
-loadEthModuleResult = await networkCtx.loadModule("eth-module", "kurtosistech/ethereum-kurtosis-module", "{}")
-ethModuleCtx = loadEthModuleResult.value
-executeEthModuleResult = await ethModuleCtx.execute("{}")
-executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value)
-console.log(executeEthModuleResultObj)
+Ethereum is one of the most popular blockchains in the world, so let's get a private Ethereum network running just to executing a Kurtosis module:
+
+```
+kurtosis module exec 'kurtosistech/ethereum-kurtosis-module'
 ```
 
 This will take approximately a minute to run, with the majority of the time spent pulling the Ethereum images. After the final `console.log` line executes, you'll see a result with information about the services running inside your enclave:
@@ -93,30 +153,41 @@ This will take approximately a minute to run, with the majority of the time spen
 }
 ```
 
-And if we query the enclave's services again...
+And if we inspect the enclave we will see the Kurtosis module and the three service IDs which the respective local port bindings:
 
-```javascript
-getServicesResult = await networkCtx.getServices()
-services = getServicesResult.value
 ```
+========================================= Kurtosis Modules =========================================
+GUID                                             LocalPortBindings
+ethereum-kurtosis-module.1649105153-1649105156   1111/tcp -> 127.0.0.1:55897
 
-...we see three service IDs:
+========================================== User Services ==========================================
+GUID                         ID                LocalPortBindings
+bootnode-1649105160          bootnode          30303/tcp -> 127.0.0.1:55902
+                                               30303/udp -> 127.0.0.1:49555
+                                               8545/tcp -> 127.0.0.1:55903
+                                               8546/tcp -> 127.0.0.1:55901
+ethereum-node-1-1649105164   ethereum-node-1   8545/tcp -> 127.0.0.1:55907
+                                               8546/tcp -> 127.0.0.1:55908
+                                               30303/tcp -> 127.0.0.1:55909
+                                               30303/udp -> 127.0.0.1:56275
+ethereum-node-2-1649105167   ethereum-node-2   30303/udp -> 127.0.0.1:51099
+                                               8545/tcp -> 127.0.0.1:55964
+                                               8546/tcp -> 127.0.0.1:55965
+                                               30303/tcp -> 127.0.0.1:55963
 
-```javascript
-Set(3) { 'bootnode', 'ethereum-node-1', 'ethereum-node-2' }
 ```
 
 But what just happened?
 
-Starting networks is a very common task in Kurtosis, so we provide [a framework called "modules"](https://docs.kurtosistech.com/modules.html) for making it dead simple. An executable module is basically a chunk of code that responds to an "execute" command, packaged as a Docker image, that runs inside a Kurtosis enclave - sort of like Docker Compose on steroids. In the steps above, we called `networkCtx.loadModule` to load [the Ethereum module](https://github.com/kurtosis-tech/ethereum-kurtosis-module) into the enclave with module ID `eth-module`, and `ethModuleCtx.execute` to run it. The Ethereum module doesn't take any parameters at load or execute time (hence the `{}`), but other modules do.
+Starting networks is a very common task in Kurtosis, so we provide [a framework called "modules"](https://docs.kurtosistech.com/modules.html) for making it dead simple. An executable module is basically a chunk of code that responds to an "execute" command, packaged as a Docker image, that runs inside a Kurtosis enclave - sort of like Docker Compose on steroids. In the steps above, we executed `kurtosis module exec` to load [the Ethereum module](https://github.com/kurtosis-tech/ethereum-kurtosis-module) into a new enclave. The Ethereum module doesn't take any parameters at load or execute time, but other modules do so, you can add them using the `--execute-params` flag (e.g: --execute-params '{"numDatastores":2}')
 
 Now that you have a pet Ethereum network, let's do something with it.
 
 Step Four: Talk To Ethereum (5 minutes)
 ---------------------------------------
-Talking to Ethereum in Javascript is easily accomplished with [the EthersJS library](https://docs.ethers.io/v5/). Your Javascript REPL is running in a Docker image (so that you don't need Javascript installed locally), so we'll need to install EthersJS on that image.
+Talking to Ethereum is easily accomplished with cURL commands.
 
-First, in a new terminal window, run the following to find the enclave our REPL is running inside:
+First, run the following to find the enclave our Eth network is running inside:
 
 ```
 kurtosis enclave ls
@@ -125,11 +196,13 @@ kurtosis enclave ls
 You should see an output similar (but not identical) to the following:
 
 ```
-EnclaveID
-KT2021-10-17T15.46.23.438
+EnclaveID                             Status
+demo                                  EnclaveContainersStatus_RUNNING
+ethereum-kurtosis-module.1649186380   EnclaveContainersStatus_RUNNING
+
 ```
 
-Copy the enclave ID, and slot it into `YOUR_ENCLAVE_ID_HERE` in the below command:
+Copy the enclave ID, where the Ethereum network is running, and slot it into `YOUR_ENCLAVE_ID_HERE` in the below command:
 
 ```
 kurtosis enclave inspect YOUR_ENCLAVE_ID_HERE
@@ -138,68 +211,54 @@ kurtosis enclave inspect YOUR_ENCLAVE_ID_HERE
 Kurtosis will output everything it knows about your enclave, similar but not identical to the output below:
 
 ```
-======================================== Interactive REPLs ========================================
-GUID
-1634503584
+========================================= Kurtosis Modules =========================================
+GUID                                             LocalPortBindings
+ethereum-kurtosis-module.1649105153-1649105156   1111/tcp -> 127.0.0.1:55897
 
 ========================================== User Services ==========================================
-GUID                         LocalPortBindings
-bootnode_1634503610          30303/udp -> 0.0.0.0:54291
-                             8545/tcp -> 0.0.0.0:52113
-                             8546/tcp -> 0.0.0.0:52111
-                             30303/tcp -> 0.0.0.0:52112
-ethereum-node-1_1634503612   30303/udp -> 0.0.0.0:59350
-                             8545/tcp -> 0.0.0.0:52115
-                             8546/tcp -> 0.0.0.0:52116
-                             30303/tcp -> 0.0.0.0:52114
-ethereum-node-2_1634503614   30303/udp -> 0.0.0.0:55007
-                             8545/tcp -> 0.0.0.0:52170
-                             8546/tcp -> 0.0.0.0:52171
-                             30303/tcp -> 0.0.0.0:52172
+GUID                         ID                LocalPortBindings
+bootnode-1649105160          bootnode          30303/tcp -> 127.0.0.1:55902
+                                               30303/udp -> 127.0.0.1:49555
+                                               8545/tcp -> 127.0.0.1:55903
+                                               8546/tcp -> 127.0.0.1:55901
+ethereum-node-1-1649105164   ethereum-node-1   8545/tcp -> 127.0.0.1:55907
+                                               8546/tcp -> 127.0.0.1:55908
+                                               30303/tcp -> 127.0.0.1:55909
+                                               30303/udp -> 127.0.0.1:56275
+ethereum-node-2-1649105167   ethereum-node-2   30303/udp -> 127.0.0.1:51099
+                                               8545/tcp -> 127.0.0.1:55964
+                                               8546/tcp -> 127.0.0.1:55965
+                                               30303/tcp -> 127.0.0.1:55963
+```
+Now let's connect to the http address exposed in the bootnode to retrieve Ethereum network information.
+
+The ethereum Kurtosis module has set the 8545 private port as the http port where users can execute cURL request using the local port binding
+
+Let's verify that our Ethereum network is producing blocks, copy the local port binging, where the http server is running, and slot it into `HTTP_URL_HERE` in the below command:
+
+```
+curl -X POST HTTP_URL_HERE --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}' -H "Content-Type: application/json"
 ```
 
-Copy the interactive REPL's GUID, and replace both `YOUR_REPL_GUID_HERE` and `YOUR_ENCLAVE_ID_HERE` in the below command with the appropriate values:
+And you will see something like this, where the result is a hexadecimal number representing the current block number:
 
 ```
-kurtosis repl install YOUR_ENCLAVE_ID_HERE YOUR_REPL_GUID_HERE ethers
-```
-
-When the command finishes, you can now use it in your CLI!
-
-```javascript
-const ethers = require("ethers")
-```
-
-Now let's get a connection to the node with service ID `bootnode` by getting a [JsonRpcProvider](https://docs.ethers.io/v5/api/providers/jsonrpc-provider/):
-
-```javascript
-bootnodeServiceId = executeEthModuleResultObj.bootnode_service_id
-bootnodeIp = executeEthModuleResultObj.node_info[bootnodeServiceId].ip_addr_inside_network
-bootnodeRpcProvider = new ethers.providers.JsonRpcProvider(`http://${bootnodeIp}:8545`);
-```
-
-Notice how we used the `executeEthModuleResultObj` object containing details about the Ethereum network, which we got from executing the module at the very beginning.
-
-Finally, let's verify that our Ethereum network is producing blocks:
-
-```javascript
-blockNumber = await bootnodeRpcProvider.getBlockNumber()
-if (blockNumber > 0) { console.log("All is well!"); }
+{"jsonrpc":"2.0","id":83,"result":"0x93"}
 ```
 
 And that's it! Anything doable in Ethers is now doable against your private Ethereum network running in your Kurtosis enclave.
 
-To exit out of the REPL you can enter any of:
+To clean up all the recent elements created you can execute the following:
 
-* Ctrl-D
-* Ctrl-C, twice
-* `.exit`
+```
+kurtosis clean -a
+```
 
-and Kurtosis will tear down the enclave and everything inside.
+and Kurtosis will tear down all enclaves and everything inside.
 
 Step Five: Get An Ethereum Testsuite (5 minutes)
 ---------------------------------------------
-Manually verifying against a sandbox network is nice, but it'd be great if we could take our logic and run it as part of CI. Kurtosis has a testing framework that allows us to do exactly that. 
+Manually verifying against an enclave is nice, but it'd be great if we could take our logic and run it as part of CI. Kurtosis has a testing framework that allows us to do exactly that. 
 
 Normally, we'd bootstrap a testsuite from [the Testsuite Starter Pack](https://github.com/kurtosis-tech/kurtosis-testsuite-starter-pack) and use [the same Kurtosis engine documentation][core-documentation] with [the testing framework documentation](https://docs.kurtosistech.com/kurtosis-testsuite-api-lib/lib-documentation) to customize it for our Ethereum usecase.
 
@@ -211,7 +270,7 @@ The second thing to notice is the `testsuite/testsuite_impl/eth_testsuite.ts` fi
 
 Now open `testsuite/testsuite_impl/basic_eth_test/basic_eth_test.ts`. You'll see that a test is really just a class with three function: `configure`, `setup`, and `run`. Like most testing frameworks, `setup` is where we place the prep work that executes before the `run` method while `run` is where we make our test assertions. The `configure` method is where timeouts for both `setup` and `run` are configured, among other things.
 
-The last thing to notice is how a `NetworkContext` is passed in as an argument to `setup`. Every Kurtosis test runs inside of its own enclave to prevent cross-test interference, and you can use [the exact same `NetworkContext` APIs][core-documentation] inside the testing framework that you used in the sandbox.
+The last thing to notice is how a `NetworkContext` is passed in as an argument to `setup`. Every Kurtosis test runs inside of its own enclave to prevent cross-test interference, and you can use [the `NetworkContext` APIs][core-documentation] inside the testing framework.
 
 Now let's see the testing framework in action. From the root of the repo, run:
 
@@ -245,7 +304,7 @@ this.executeEthModuleResultObj = JSON.parse(executeEthModuleResult.value);
 log.info("Ethereum network set up successfully");
 ```
 
-This is the same code we already executed in the REPL, cleaned up for Typescript. The only new bits to pay attention to are the error-checking: all `NetworkContext` methods, as well as the `Test.setup` and `Test.run` methods, return [a Result object][neverthrow] (much like in Rust). If `setup` or `run` return a non-`Ok` result, the test will be marked as failed. This allows for easy, consistent error-checking: simply propagate the error upwards.
+Pay attention to the error-checking: all `NetworkContext` methods, as well as the `Test.setup` and `Test.run` methods, return [a Result object][neverthrow] (much like in Rust). If `setup` or `run` return a non-`Ok` result, the test will be marked as failed. This allows for easy, consistent error-checking: simply propagate the error upwards.
 
 Second, replace the `// TODO Replace with block number check` line with this code:
 

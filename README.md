@@ -202,7 +202,7 @@ Step Four: Talk To Ethereum (5 minutes)
 
 Now let's connect to the Ethereum bootnode to verify the network is producing blocks.
 
-Find the Ethereum node with ID `bootnode` in the enclave contents, find its RPC port declared on `8545/tcp`, and copy the public IP and port that it's bound to on your machine (e.g. `127.0.0.1:55903`).
+Find the Ethereum node with ID `bootnode` in the enclave contents, find its RPC port declared on `8545/tcp`, and copy the public IP and port that it's bound to on your machine (e.g. `127.0.0.1:55878`).
 
 Then, slot it into RPC_URL_HERE in the below command:
 

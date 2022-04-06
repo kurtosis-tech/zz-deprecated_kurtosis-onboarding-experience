@@ -121,7 +121,7 @@ Now that we know how to create an enclave and add a service, we can proceed to o
 Ethereum is the most popular smart contract blockchain in the world, so let's create a private Ethereum network in Kurtosis:
 
 ```
-kurtosis module exec --enclave-id demo 'kurtosistech/ethereum-kurtosis-module''
+kurtosis module exec --enclave-id demo 'kurtosistech/ethereum-kurtosis-module'
 ```
 
 This will take approximately a minute to run, with the majority of the time spent pulling the Ethereum images. After the final `console.log` line executes, you'll see a result with information about the services running inside your enclave:
@@ -171,22 +171,23 @@ kurtosis enclave inspect demo
 ```
 ========================================= Kurtosis Modules =========================================
 GUID                                             LocalPortBindings
-ethereum-kurtosis-module.1649105153-1649105156   1111/tcp -> 127.0.0.1:55897
+ethereum-kurtosis-module.1649269281-1649269281   1111/tcp -> 127.0.0.1:55863
 
 ========================================== User Services ==========================================
 GUID                         ID                LocalPortBindings
-bootnode-1649105160          bootnode          30303/tcp -> 127.0.0.1:55902
-                                               30303/udp -> 127.0.0.1:49555
-                                               8545/tcp -> 127.0.0.1:55903
-                                               8546/tcp -> 127.0.0.1:55901
-ethereum-node-1-1649105164   ethereum-node-1   8545/tcp -> 127.0.0.1:55907
-                                               8546/tcp -> 127.0.0.1:55908
-                                               30303/tcp -> 127.0.0.1:55909
-                                               30303/udp -> 127.0.0.1:56275
-ethereum-node-2-1649105167   ethereum-node-2   30303/udp -> 127.0.0.1:51099
-                                               8545/tcp -> 127.0.0.1:55964
-                                               8546/tcp -> 127.0.0.1:55965
-                                               30303/tcp -> 127.0.0.1:55963
+bootnode-1649269284          bootnode          8546/tcp -> 127.0.0.1:55879
+                                               30303/tcp -> 127.0.0.1:55877
+                                               30303/udp -> 127.0.0.1:59562
+                                               8545/tcp -> 127.0.0.1:55878
+ethereum-node-1-1649269292   ethereum-node-1   30303/udp -> 127.0.0.1:55356
+                                               8545/tcp -> 127.0.0.1:55883
+                                               8546/tcp -> 127.0.0.1:55884
+                                               30303/tcp -> 127.0.0.1:55885
+ethereum-node-2-1649269296   ethereum-node-2   30303/udp -> 127.0.0.1:64347
+                                               8545/tcp -> 127.0.0.1:56013
+                                               8546/tcp -> 127.0.0.1:56014
+                                               30303/tcp -> 127.0.0.1:56012
+webserver-1649268254         webserver         <none>
 
 ```
 
@@ -201,7 +202,7 @@ Step Four: Talk To Ethereum (5 minutes)
 
 Now let's connect to the Ethereum bootnode to verify the network is producing blocks.
 
-Find the Ethereum node with ID `bootnode` in the enclave contents, find its RPC port declared on `8545/tcp`, and copy the public IP and port that it's bound to on your machine (e.g. `127.0.0.1:55903`).
+Find the Ethereum node with ID `bootnode` in the enclave contents, find its RPC port declared on `8545/tcp`, and copy the public IP and port that it's bound to on your machine (e.g. `127.0.0.1:55878`).
 
 Then, slot it into RPC_URL_HERE in the below command:
 

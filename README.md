@@ -61,18 +61,17 @@ kurtosis enclave inspect demo
 You should see something like this:
 
 ```
-Enclave ID:                           kt2022-04-04t17.17.03.135
-Data Directory:                       /Users/username/Library/Application Support/kurtosis/engine-data/enclaves/kt2022-04-04t17.17.03.135
+Enclave ID:                           demo
 Enclave Status:                       EnclaveContainersStatus_RUNNING
 API Container Status:                 EnclaveAPIContainerStatus_RUNNING
 API Container Host GRPC Port:         127.0.0.1:55783
 API Container Host GRPC Proxy Port:   127.0.0.1:55784
 
 ========================================= Kurtosis Modules =========================================
-GUID   LocalPortBindings
+GUID   Ports
 
 ========================================== User Services ==========================================
-GUID   ID   LocalPortBindings
+GUID   ID   Ports
 ```
 
 Notice how the enclave doesn't yet have any user services or Kurtosis modules. This is because enclaves are created empty by default.
@@ -103,8 +102,8 @@ Now, you should see the web server listed in the "User Services" section, like s
 
 ```
 ========================================== User Services ==========================================
-GUID                   ID          LocalPortBindings
-webserver-1649186256   webserver   80/tcp -> 127.0.0.1:63825
+GUID                   ID          Ports
+webserver-1649186256   webserver   http: 80/tcp -> 127.0.0.1:63825
 ```
 
 Finally, you can remove the service with the following:
@@ -170,24 +169,24 @@ kurtosis enclave inspect demo
 
 ```
 ========================================= Kurtosis Modules =========================================
-GUID                                             LocalPortBindings
-ethereum-kurtosis-module.1649269281-1649269281   1111/tcp -> 127.0.0.1:55863
+GUID                                             Ports
+ethereum-kurtosis-module.1649269281-1649269281   grpc: 1111/tcp -> 127.0.0.1:55863
 
 ========================================== User Services ==========================================
-GUID                         ID                LocalPortBindings
-bootnode-1649269284          bootnode          8546/tcp -> 127.0.0.1:55879
-                                               30303/tcp -> 127.0.0.1:55877
-                                               30303/udp -> 127.0.0.1:59562
-                                               8545/tcp -> 127.0.0.1:55878
-ethereum-node-1-1649269292   ethereum-node-1   30303/udp -> 127.0.0.1:55356
-                                               8545/tcp -> 127.0.0.1:55883
-                                               8546/tcp -> 127.0.0.1:55884
-                                               30303/tcp -> 127.0.0.1:55885
-ethereum-node-2-1649269296   ethereum-node-2   30303/udp -> 127.0.0.1:64347
-                                               8545/tcp -> 127.0.0.1:56013
-                                               8546/tcp -> 127.0.0.1:56014
-                                               30303/tcp -> 127.0.0.1:56012
-webserver-1649268254         webserver         <none>
+GUID                         ID                Ports
+bootnode-1649269284          bootnode          ws: 8546/tcp -> 127.0.0.1:55879
+                                               tcpDiscovery: 30303/tcp -> 127.0.0.1:55877
+                                               udpDiscovery: 30303/udp -> 127.0.0.1:59562
+                                               rpc: 8545/tcp -> 127.0.0.1:55878
+ethereum-node-1-1649269292   ethereum-node-1   udpDiscovery: 30303/udp -> 127.0.0.1:55356
+                                               rpc: 8545/tcp -> 127.0.0.1:55883
+                                               ws: 8546/tcp -> 127.0.0.1:55884
+                                               tcpDiscovery: 30303/tcp -> 127.0.0.1:55885
+ethereum-node-2-1649269296   ethereum-node-2   udpDiscovery: 30303/udp -> 127.0.0.1:64347
+                                               rpc: 8545/tcp -> 127.0.0.1:56013
+                                               ws: 8546/tcp -> 127.0.0.1:56014
+                                               tcpDiscovery: 30303/tcp -> 127.0.0.1:56012
+webserver-1649268254         webserver         http: 80/tcp
 
 ```
 

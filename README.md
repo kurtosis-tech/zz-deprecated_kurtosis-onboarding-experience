@@ -1,3 +1,5 @@
+# DEPRECATION NOTICE: This repo has been deprecated in favor of the official docs at https://docs.kurtosis.com/quickstart
+
 Kurtosis Ethereum Quickstart
 ============================
 The instructions below will walk you through spinning up an Ethereum network in a Kurtosis sandbox, interacting with it, and migrating the logic into a test. By the end of this tutorial, you will have a rudimentary Ethereum test in Typescript that you can begin to modify on your own.
